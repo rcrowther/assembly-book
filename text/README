@@ -13,9 +13,11 @@ On the plus side, the structure is emerging. Substantial discussions of several 
 The mini-book is pre-compiled into HTML (using TML), and has builtin CSS formatting. 
 
 == Using the mini-book
-You can read direct from Github. Go to the folder /html and click on 'index.htm'. Your web browser will show the index. Go have a look.
+You can not read direct from Github (this would mean either converting to a markup format for an advanced README, which wouldn't do justice to formatting, or running a Github Pages branch, which I can't be bothered to maintain). 
 
-The book is uploaded to Github, so, if you use it, you can also download a (compressed) copy to your computer.
+Download a (compressed) copy to your computer. Go to the folder /html and click on 'index.htm'. Your web browser will do the rest. Go have a look.
+
+
 
 == License
 #bq

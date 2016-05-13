@@ -1,6 +1,6 @@
 # x86 Assembly Code mini‐book #
 
-Working title ”A stumble through Linux x86 Assembly Language”. A mini‐book/pamphlet written on x86 assembly code.
+Working title ”A Stumble through Linux x86 Assembly Language”. A mini‐book/pamphlet written on x86 assembly code.
 
 Currently only available in HTML.
 
@@ -19,11 +19,11 @@ The mini‐book is pre‐compiled into HTML (using TML), and has builtin CSS for
 
 ## Using the mini‐book #
 
-You can read direct from Github. Go to the folder /html and click on ’index.htm’. Your web browser will show the index. Go have a look.
+You can not read direct from Github (this would mean either converting to a markup format for an advanced README, which wouldn’t do justice to formatting, or running a Github Pages branch, which I can’t be bothered to maintain).
 
-The book is uploaded to Github, so, if you use it, you can also download a (compressed) copy to your computer.
+Download a (compressed) copy to your computer. Go to the folder /html and click on ’index.htm’. Your web browser will do the rest. Go have a look.
 
 
-## Licence #
+## License #
 
 <a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/4.0/"><img alt="Creative Commons License" style="border-width:0" src="https://i.creativecommons.org/l/by-nc-sa/4.0/88x31.png" /></a><br /><span xmlns:dct="http://purl.org/dc/terms/" property="dct:title">A Stumble through Linux x86 Assembly Language</span> by <span xmlns:cc="http://creativecommons.org/ns#" property="cc:attributionName">Robert Crowther</span> is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/4.0/">Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License</a>.
