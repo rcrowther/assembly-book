@@ -1,0 +1,20 @@
+<!DOCTYPE html><html><head><title>15_namespaces</title><meta http-equiv="content-type" content="text/html; charset=UTF-8" /><link rel="stylesheet" type="text/css" media="screen" href="../lib/doc.css"/></head><body><article><h1>Names and namespacing</h1><p>Perhaps the only overriding difference between machine code and assembly is that assembly provides symbolic names (it also provides shortcut labels for instructions, but that the same?).</p><p>Names, for any entity, ought to be readable. Though games designers seem to like to call their methods “FGLX2dAPP_c()”—if that’s your way, you know what you are doing.</p><p>Assembly language shares an issue with C, an issue not shared by any other common language. That is, the names must be unique. These two sub‐programs, with the same name, can not exist,</p><pre><code>    void print(int x)
+    void print(float x)</code></pre><p>The C language seems to offer a print method capable of accepting different types, ‘printf’, but this works by passing a ‘blah, whatever’ type of parameter, and passing type information with the function call,</p><pre><code>    void printf("%d", x)
+    void printf("%f", x)</code></pre><p>This is a solution, but tiring.</p><h2>Name mangling</h2><p>A higher level language gets round this, once down to the machine code, by the very simple technique of changing the function name. This is called name‐mangling. So code may be written as,</p><pre><code>    def print(x:int)
+    def print(x:float)</code></pre><p>by the time it reaches machine code, the names may have been changed to (simple example),</p><pre><code>    def _i_print(x:int)
+    def _f_print(x:float)</code></pre><p>GCC might mangle C++ like this,</p><pre><code>    _ZN4util5printEv(x:int)</code></pre><p>and the functions can not clash.</p><p>There is a little trick here. ‘i’ and ‘f’ refer to the parameter types, as the macros in the rig from Post 4 refer to parameter types,</p><pre><code>macro print64 1
+...
+
+macro printStr
+...</code></pre><p>Parameter types in names are a way of distinguishing similar sub‐programs, but there is other data you may wish to add to a name also…</p><h2>Namespacing</h2><p>Many high‐level languages distinguish functions attached to different objects e.g.</p><pre><code>class String {
+// means ’concatenate the strings’
+    def +(x: String)
+}
+
+class Integer {
+// means ’perform arithmetic’
+    def +(x: Integer)
+} 
+</code></pre><p>Again, the names may have their names adapted for the machine code. C has the same problem as assembly, names must be unique, and you can see the coders coping in GLIB, creating function names like,</p><pre><code>    g_uint64_checked_add()
+ 	g_io_channel_win32_new_socket()
+    g_time_zone_new_utc()</code></pre><p>These names are based round the data‐type applied (GLIB has an extra reason for consistent naming. The project has special code for looking at project code to gather data for documentation and binding generation).</p><h2>Gabble</h2><p>When writing assembly code, it is worth being careful and consistent about naming. Use longish names if it makes sense.</p><p>That said, short names make code faster. May seem like I’m talking crazy, but it’s true. It’s a consideration for compiler writers, so you may bear that in mind.</p><dl><dd>Wikipedia on name‐mangling,</dd><p><a href="https://en.wikipedia.org/wiki/Name_mangling">https://en.wikipedia.org/wiki/Name_mangling</a></p></dl></article></body></html>

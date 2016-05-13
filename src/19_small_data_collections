@@ -1,6 +1,6 @@
 
 
-= 15 Small data structures
+= 19 Small data structures
 
 == Tables
 This involves macros. If you prefer, skim. Check the end, too.
@@ -10,7 +10,7 @@ This involves macros. If you prefer, skim. Check the end, too.
 NASM/YASM documentation has an example,
 
 #bq
-== 4.3.9 Concatenating Macro Parameters
+===== 4.3.9 Concatenating Macro Parameters
 ...
 ?cb
 %macro keytab_entry 2 
@@ -26,7 +26,7 @@ keytab:
     keytab_entry Return,13
 ?
 
-which would expand to
+which expands to,
 
 ?cb
 keytab: 
@@ -39,7 +39,7 @@ keytab:
 ?
 #
 
-There's quite a lot to explain here. First, all the examples we use have a colon for labels, so let's clear that up. NASM documentation,
+A lot to explain here. First, all the examples we use have a colon for labels, so let's clear that up. NASM documentation,
 
 #bq
 The colon after a label is also optional.
@@ -47,7 +47,7 @@ The colon after a label is also optional.
 
 Colon or not, these are all labels.
 
-''$' means the address of the current line. Now, aside from NASM ''directives', all the assembly lines which do some kind  of CPU ''instruction' are mapped into memory. A line of assembly goes stright to a line of address. So the adress is the star of this line in memory. Therefore, the address minus ''keytab' (''$- is arithemtic, it means <address> minus <x>, it's not a combination symbol) is the offset from ''keypos' of that line with the ''$'.
+''$' means the address of the current line. Now, all lines of assembly code which mark some kind of CPU ''instruction' are mapped into memory. A line of assembly goes straight to an address, one-to-one. So the address is the start of this line in memory. Therefore, the address minus ''keytab' (''$-' is arithmetic, it means ''address' minus ''x', it's not a combination symbol) is the offset from ''keypos' of that line with the ''$'.
 
 Okay?
 
@@ -56,7 +56,7 @@ Except a line like,
     keyposF1 equ $-keytab 
 ?
 
-is not CPU instruction, it's assembly, so that is not put in memory. What is transferred to the CPU is,
+is not CPU instruction, it's assembly, a ''directive', so that is not put in memory. What is transferred to the CPU is,
 
 ?cb 
     db 128+1 
@@ -75,7 +75,7 @@ but the assembly language knows the labels, and will place offsets in any code t
     db 13
 ?
 
-These values are bytes. As written into memory, they are three sucessive allocated byte spaces. How do we acess htem? Well, as they are bytes, in 64-bit we will need to do some fixes (this complicates the coded, but I wanted to work from the original NASSM/YASM example)
+These values are bytes. As written into memory, they are three successive allocated byte spaces. How do we access them? Well, as they are bytes, in 64-bit we will need to do some fixes (this complicates the coded, but I wanted to work from the original NASSM/YASM example)
 
 First we will need to clear a register to ''0'. We do not want (unused) upper bytes reading or printing as extra information. Then we need to read into a sub-register---''al' the one-byte end of ''rax', would be the general-purpose choice. Then do whatever we are going to do with the value,
 
@@ -129,19 +129,19 @@ The ''xor' line makes sure the whole ''rax' register is empty (the code only use
 
 What's the point?
 
-The word ''table' has, unfortunately, a dual meaning. To most people, it is a two dimensional array of objects---familiar from data presented in writing, speadsheets, maybe plotting graphs in maths class. But in lower-level computer languages, it often means a one dimentioal array of objects that represnt more than numbers. Some coders may be aware of how a the high-level idea of class is actually implemented---it uses a structure called a ''vtable' which collects the methods and fields of a class into an array. When a method is called on a class, the call goes to the class (and so is restrained to methods and fields in the class), then code inside the class directs the call to the named entry in the ''vtable'. So that's why this structure has it's name.
+The word ''table' has, unfortunately, a dual meaning. To most people, it is a two dimensional array of objects---familiar from data in writing, spreadsheets, maybe plotting graphs in maths class. But in lower-level computer languages, it often means a one dimensional array of objects that represent more than numbers. Some coders may be aware of how the high-level idea of class is actually implemented---it uses a structure called a ''vtable' which collects the methods and fields of a class into an array. When a method is called on a class, the call goes to the class (and so is restrained to methods and fields in the class), then code inside the class directs the call to the named entry in the ''vtable'. So that's why this structure has it's name.
 
 The other way to describe this is to compare with a high-level language, and say it is a very raw, low level, associative (named) array, or map. It has differences to a high-level map. A high level ''map' will associate strings with values,
 
 ?cb
-    val m = Map("Anna" -> 67, "Lee" -> 56, "Shiela" -> 89)
+    val m = Map("Anna" -> 67, "Lee" -> 56, "Sheila" -> 89)
 ?
 
 Here we only have a label, an idea only known to the compiler, and not returning a string. Also, the table only uses offsets, so a more accurate description of it's structure in a high level language would be,
 
 ?cb
     val a = Array(67, 56, 89)
-    val aOffset = Map("Anna" -> 0, "Lee" -> 1, "Shiela" -> 2)
+    val aOffset = Map("Anna" -> 0, "Lee" -> 1, "Sheila" -> 2)
 
     val leeResult = a(aOffset("Lee")) 
 ?
@@ -150,7 +150,7 @@ In a high-level language, this is an unusual approach, inefficient, with little 
 
 A high-level map would usually be implemented using strings and a hash-table of the strings to values. This would be a mutable structure---key/values can be deleted, appended, etc. Also, the keys themselves can be viewed---maps may have methods to iterate both keys and values, return a collection of the keys etc. 
 
-Compared to this, in the macroed assembly structure, keys are invisible---they only exist in the language, and are erased on compilation. And the structure can not be lengthened or shortened (though items in this particular implementation can be updated). Hoever, the structure is very efficient. And, in assembly language, the hard-coded register names and addresses loose all overall meaning---the structure above overlays the raw meanings, adds a welcome readability.
+Compared to this, in a macro assembly structure, keys are invisible---they only exist in the language. They are erased on compilation. And the structure can not be lengthened or shortened (though items in this particular implementation can be updated). However, the structure is very efficient. And, in assembly language, the hard-coded register names and addresses loose all overall meaning---the structure above overlays the raw meanings, adds a welcome readability.
 
 ===  Non macro tables
 
@@ -201,7 +201,7 @@ main:
     ret
 ?
 
-works as well. For very samll tables, the non-macros version may be prefered.
+works as well. For small tables, the non-macro version may be preferred.
 
 
 
@@ -285,8 +285,8 @@ Otherwise, once you grasp that the brackets are not the same as higher-level poi
 
 
 
-=== Multi-dimentional arrays
-In higher-level languages (particularly scipting or object-orientated languages) it is common to make multi-dimentional arrays by attaching one array to another,
+=== Multi-dimensional arrays
+In higher-level languages (particularly scripting or object-orientated languages) it is common to make multi-dimensional arrays by attaching one array to another,
 
 ?cb
 SECTION .data
@@ -307,9 +307,9 @@ SECTION .bss
 #???As you see, this can be done, but hold up a minute...
 
 
-Higher-level languages which are more detailed about array creation and intialisation often offer all-in-one definition of (usually) non-ragged (''non-ragged' = the sub-arrays are all the same size) arrays. That's because assembly/machine code offers the possibility of holding the multi-dimentional array in one single underlying array, and using indexing to access the ''sub-arrays'. 
+Higher-level languages which are more detailed about array creation and initialisation often offer all-in-one definition of (usually) non-ragged (''non-ragged' = the sub-arrays are all the same size) arrays. That's because assembly/machine code offers the possibility of holding the multi-dimensional array in one single underlying array, and using indexing to access the ''sub-arrays'. 
 
-Say we need an array of 3 arrays of length 5, 3m:x5. We call the multi-dimentional array ''am'. ''am' is 15 elements long,
+Say we need an array of 3 arrays of length 5, 3m:x5. We call the multi-dimensional array ''am'. ''am' is 15 elements long,
 
 ?cb
 SECTION .bss
@@ -346,9 +346,9 @@ main:
 
 
 == Structs
-For the coverage of these posts, talking about structs is a little advanced. The subject is here because NASM has built in support, and disussion of structs takes us to within touching distance of C (a thought to help you join things together. If you are interested more about the connection between assembler and C, the PCASM book has a vast chapter on generalities of how machine code and C interact)
+For the coverage of these posts, talking about structs is a little advanced. The subject is here because NASM has built in support, and discussion of structs takes us to within touching distance of C (a thought to help you join things together. If you are interested more about the connection between assembler and C, the PCASM book has a vast chapter on generalities of how machine code and C interact)
 
-First, a struct is an idea that only really occcurs in C (maybe in some other very low high-level languages). It's a collection of varying size data types, usually but not always with labels. A pseudo-code example,
+First, a struct is an idea that only really occurs in C (maybe in some other very low high-level languages). It's a collection of varying size data types, usually but not always with labels. A pseudo-code example,
 
 ?cb
     struct pos {
@@ -359,7 +359,7 @@ First, a struct is an idea that only really occcurs in C (maybe in some other ve
     }
 ?
 
-So it's a collection of elements of different sizes. A struct usually can acesss it's elements through a label, so it's more like an array with a table attached or built in (for tables, see the section above a bit). The struct is a lower kind of collection than a high-level language ''class', though. It can not inherit, or do overloading, or any of those actions sometimes called ''OOP' (the only similarity is that it holds different sized objects)
+So it's a collection of elements of different sizes. A struct usually can access it's elements through a label, so it's more like an array with a table attached or built in (for tables, see the section above a bit). The struct is a lower kind of collection than a high-level language ''class', though. It can not inherit, or do overloading, or any of those actions sometimes called ''OOP' (the only similarity is that it holds different sized objects)
 
 A struct can be made from an array,
 
@@ -409,7 +409,7 @@ greengages:
     iend
 ?
 
-Then we need to dedclare an instance of the struct, using ''istruc'. This also contains a macro ''at'. ''at' works out the offsets in the completed struct structre. Then we need code,
+Then we need to declare an instance of the struct, using ''istruc'. This also contains a macro ''at'. ''at' works out the offsets in the completed struct structure. Then we need code,
 
 ?cb
 
@@ -465,17 +465,17 @@ main:
     ret
 ?
 
-In the view of an assembly language coder who understood the description of tables above, this will be a complex of ideas. In the view of an assembly language beginner who skimmed the description of tables, they will be grateful for a readable action. In the view of a C programmer, an important data type has been born. In the view of a Smalltalk or Ruby prograzmmer, this is shockingly limited, and they will be wondering how in the world some program like a parser could be constructed.
+In the view of an assembly language coder who understood the description of tables above, this will be a complex of ideas. In the view of an assembly language beginner who skimmed the description of tables, they will be grateful for a readable action. For a C programmer, an important data type has been born. For a Smalltalk or Ruby programmer, this is shockingly limited, and they will be wondering how in the world some program like a parser could be constructed.
 
 Hush, we've got that far.
 
 
 === alignment
 
-???
+TODO
 
 
-+refs
++dl.refs
 ~ NASM documentation on structs (is in the macros section),
 : [a{http://www.nasm.us/xdoc/2.12.01/html/nasmdoc4.html#section-4.11.10}]
 +

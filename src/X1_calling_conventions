@@ -73,15 +73,19 @@ call _func
 
 
 
+
+
 == 64-bit conventions
-64-bit conventions use regiswters to carry the first few parameters.
+64-bit conventions use registers to carry the first few parameters.
 
 Even if unused, do not rely on parameter registers to carry data across a function call.
 
-== 64-bit C calls (MS)
+
 
 Most outputs aside from ELF require an underscore on visible symbols.
 
+
+== C calls (MS)
 Integer parameters go in registers  RCX, RDX, R8 and R9. Futher parameters go on the stack right-left reverse order (first argument is pushed last).
 
 
@@ -91,13 +95,13 @@ Floating point parameters are passed in XMM0 to XMM3.
 When integer and float parameters are mixed, both sets of inputs are stepped, used or not e.g. float xmmo, float xmm1, int r8, float xmm3 
 
 
-=== Called by C
+=== Calling C
 If parameters are to be used, preserve non-volatile registers,
 
-==== System V
-++
-@ RBX, RBP, RSI, RDI, R12--R15, and XMM6--XMM15
-+
+
+
+==== System V (Solaris/Linux etc.)
+
 
 If used, they should be be restored.
 
@@ -112,24 +116,33 @@ push dword [firstParam]
 call _func
 
 
-== 64-bit C calls (System V Solaris/Linux etc.)
-=== Called by C
-RBX, RBP, R12--R15 are non-volatile. If used, they need restoring.
-(RAX, RDX, RCX, RSP, RDI, RSI,  R8--R11, are volatile)
 
-https://github.com/hjl-tools/x86-psABI/wiki/X86-psABI
+=== Called by C
+These registers are non-volatile. If used, they need restoring,
+
+++
+@ RBX, RBP, R12--R15
++
+
+MMX (XMM(x) registers) can be preserved using ''emms' or ''femms' instructions.
+
+
 
 
 === Calling C
 Most outputs aside from ELF require an underscore on visible symbols.
 
-Integer parameters go in registers  RDI, RSI, RDX, RCX, R8 and R9. Further parameters go on the stack right-left reverse order (first argument is pushed last).
+Integer parameters go in registers 
+++
+@ RDI, RSI, RDX, RCX, R8 and R9
++
+Further parameters go on the stack right-left reverse order (first argument is pushed last).
 
 Floating point parameters are passed in XMM0 to XMM7.
 
-When integer and float parameters are mixed, both sets of inputs are stepped, used or not e.g. float xmmo, float xmm1, int r8, float xmm3 
+When integer and float parameters are mixed, both sets of inputs are stepped, used or not e.g. float xmmo, float xmm1, int r8, float xmm3.
 
-
+Returns are in a variety of places, depening on size of the data. For an integer, they will be in RAX.
 
 
 == Macros

@@ -1,0 +1,95 @@
+= Names and namespacing
+Perhaps the only overriding difference between machine code and assembly is that assembly provides symbolic names (it also provides shortcut labels for instructions, but that the same?).
+
+Names, for any entity, ought to be readable. Though games designers seem to like to call their methods ""FGLX2dAPP_c()"---if that's your way, you know what you are doing.
+
+Assembly language shares an issue with C, an issue not shared by any other common language. That is, the names must be unique. These two sub-programs, with the same name, can not exist,
+
+?cb
+    void print(int x)
+    void print(float x)
+?
+
+The C language seems to offer a print method capable of accepting different types, ''printf', but this works by passing a ''blah, whatever' type of parameter, and passing type information with the function call,
+
+?cb
+    void printf("%d", x)
+    void printf("%f", x)
+? 
+
+This is a solution, but tiring.
+
+== Name mangling
+A higher level language gets round this, once down to the machine code, by the very simple technique of changing the function name. This is called name-mangling. So code may be written as,
+
+?cb
+    def print(x:int)
+    def print(x:float)
+?
+
+by the time it reaches machine code, the names may have been changed to (simple example),
+
+
+?cb
+    def _i_print(x:int)
+    def _f_print(x:float)
+?
+
+GCC might mangle C++ like this,
+
+?cb
+    _ZN4util5printEv(x:int)
+?
+
+and the functions can not clash.
+
+There is a little trick here. ''i' and ''f' refer to the parameter types, as the macros in the rig from Post 4 refer to parameter types,
+
+?cb
+macro print64 1
+...
+
+macro printStr
+...
+?
+
+Parameter types in names are a way of distinguishing similar sub-programs, but there is other data you may wish to add to a name also...
+
+
+== Namespacing
+Many high-level languages distinguish functions attached to different objects e.g.
+ 
+?cb
+class String {
+// means 'concatenate the strings'
+    def +(x: String)
+}
+
+class Integer {
+// means 'perform arithmetic'
+    def +(x: Integer)
+} 
+
+?
+
+Again, the names may have their names adapted for the machine code. C has the same problem as assembly, names must be unique, and you can see the coders coping in GLIB, creating function names like,
+
+?cb
+    g_uint64_checked_add()
+ 	g_io_channel_win32_new_socket()
+    g_time_zone_new_utc()
+?
+
+These names are based round the data-type applied (GLIB has an extra reason for consistent naming. The project has special code for looking at project code to gather data for documentation and binding generation).
+
+
+
+== Gabble
+When writing assembly code, it is worth being careful and consistent about naming. Use longish names if it makes sense.
+
+That said, short names make code faster. May seem like I'm talking crazy, but it's true. It's a consideration for compiler writers, so you may bear that in mind.
+
++dl
+~ Wikipedia on name-mangling,
+[a{https://en.wikipedia.org/wiki/Name_mangling}]
++

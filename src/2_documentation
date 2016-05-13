@@ -1,6 +1,6 @@
 = 2 Documentation
 
-Traditionally, references are  placed at the back of written material. Academically, that's organised, but who goes there, especially on the web? So odd is the nature of available assembly language documentation that I'm going to break 500 years of printing practice, and put the references where you can find them---here, at the front.
+Traditionally, references are  placed at the back of written material. Academically, that's organised, but who goes there, especially on the web? So odd is the coverage of documentation that I'm going to break 500 years of printing practice, and put the references where you can find them---here, at the front.
 
 
 == Available documentation on Assembly Code
@@ -18,18 +18,16 @@ After that, there are the compiler reference manuals. This tutorial uses mainly 
 As for the official Intel manual on the x86, it is an invaluable source of information. If you want the lowdown on how floating point numbers are represented, or the exact action of ''ENTER', and you can stand wading through the pages, this is the place.
 
 
-That said, the Intel manual is near-useless for learning how to code. It will not help you with the history of the instructions---why ''PUSHA' and ''POPA' have no 64-bit versions. It will not help you with the practice of the instructions, for example, the intentions of the ''shaal' instruction. Not only that, but the Intel guide covers the now-long history of the x86 CPU design, and multiple upgrades to bit-size. It runs to nearly 4000 pages. I don't have fast computers and, downloaded or not, they struggle to display the manual. I'd go so far as to say; any coder who tells their audience to read the manual (meaning the Intel x86 manual), without reference or explanation, is lazy and insulting their audience. 
+That said, the Intel manual is near-useless for learning how to code. It will not help you with the history of the instructions---why ''PUSHA' and ''POPA' have no 64-bit versions. It will not help you with the practice, for example, the intentions of the ''???' instruction. Not only that, but the Intel guide covers the now-long history of the x86 CPU design through multiple upgrades to bit-size. It runs to nearly 4000 pages. I don't have fast computers and, downloaded or not, they struggle to display the manual. I'd go so far as to say; any coder who tells their audience to read the manual (meaning the Intel x86 manual), without reference or explanation, is lazy and insulting their audience. 
 
 
-AMD documentation, though I have never seen it mentioned on the web, is divided up amd more manageable. AMD also provide the ''Optimisation Guide' with genuinely interesting hints and the low-down data on latency (a revised word for ''clock cycles' which covers the possibility of pipelining and paralleled execution).
+AMD documentation, though I have never seen it mentioned on the web, is divided up amd more manageable. AMD also provide the ''Optimisation Guide' with genuinely interesting hints and the low-down data on latency (a revised word for ''clock cycles' covering the possibility of pipelining and paralleled execution).
 
-Most of the so-called tutorials on the web, the only effective ones, are material from University courses. These are, perhaps as expected, well organised, presented and complete. However, the interest seems to be in teaching machine code to help coders become better high-level programmers. This leads to bias in the material, such as covering far too much on numeric representations (do we care?). And not enough on the practicalities of coding. The course tutorials also, perhaps due to their place in courses, make far too many assumptions about how an assembly language environment works. Perhaps this is because that material has been introduced, or will supplement course presentations. And finally, the tight text and dry presentation characteristic of a University course limits the general audience and usage. However, the [a{http://www.drpaulcarter.com/pcasm/}course by Paul Carter], who worked for the University of Central Oklahoma University, is the only work I have found which can claim to teach assembly language. It is the only alternative to this tutorial, so credit, and if you don't like this tutorial, or wish to supplement it, try there.
+Most of the so-called tutorials on the web, the only effective ones, are material from University courses. These are, perhaps as expected, well organised, presented and complete. However, the interest seems to be in teaching machine code to help coders become better high-level programmers. This leads to bias in the material, such as covering far too much on numeric representations (do we care?). And not enough on the practicalities of coding. The course tutorials also, perhaps due to their place in courses, make far too many assumptions about how an assembly language environment works. Perhaps this is because that material has been introduced, or will supplement course presentations. And finally, the tight text and dry presentation characteristic of a University course limits the general audience and usage. However, the [a{http://www.drpaulcarter.com/pcasm/}course by Paul Carter], who worked for the University of Central Oklahoma University, is the only work I have found which can claim to teach assembly language. It is the only alternative to this tutorial, so credit. If you don't like this tutorial, or wish to supplement it, try there.
 
-== Useful references on assembly language programming
+== General references on assembly language programming
 
 +dd
-~ Try x86 online,
-: [a{https://defuse.ca/online-x86-assembler.htm#disassembly}]
 
 ~ NASM docs,
 : [a{http://www.nasm.us/xdoc/2.12.01/html/nasmdoc0.html}]
@@ -40,14 +38,16 @@ Most of the so-called tutorials on the web, the only effective ones, are materia
 ~ GAS vs. NASM syntax (with interesting examples),
 : [a{http://www.ibm.com/developerworks/linux/library/l-gas-nasm/index.html}]
 
+~ C API conventions, official AMD, on Github,
+: [a{https://github.com/hjl-tools/x86-psABI/wiki/X86-psABI}]
++
+
+
+== Tutorial references
++dd
+
 ~ ''The Art of Assembly Language', a book available online or in print, which backs a university course. Sounds promising, but uses it's own language ''HLA', which makes it largely useless. Helpful detail on memory organisation,
 : [a{http://www.plantation-productions.com/Webster/www.artofasm.com/index.html}]
-
-~ Real examples! Win, but real!
-: [a{http://asmsource.8k.com/source32.htm}]
-
-~ More examples
-: [a{http://www.csee.umbc.edu/portal/help/nasm/sample_64.shtml}]
 
 ~ Eccentrically detailed, Win32 only, good tutorial,
 : [a{http://www.drpaulcarter.com/pcasm/}]
@@ -55,7 +55,19 @@ Most of the so-called tutorials on the web, the only effective ones, are materia
 ~ Proper tutorial with an entertaining intro, but not enough,
 : [a{http://www.singlix.com/trdos/runix/runix386v1_docs/nasm.pdf}]
 
-~ Official GNU info on how and where to use machine code,
+~ Real examples! Win, but real!
+: [a{http://asmsource.8k.com/source32.htm}]
+
+~ More examples
+: [a{http://www.csee.umbc.edu/portal/help/nasm/sample_64.shtml}]
++
+
+== Learning material
++dd
+~ Try x86 online,
+: [a{https://defuse.ca/online-x86-assembler.htm#disassembly}]
+
+~ Official GNU advice on how and where to use machine code,
 : [a{http://www.tldp.org/HOWTO/html_single/Assembly-HOWTO/#AEN133}]
 
 ~ Interesting point on assembly code and macros,
@@ -64,24 +76,21 @@ Most of the so-called tutorials on the web, the only effective ones, are materia
 ~ Guide to x86 register usage,
 : [a{http://www.swansontec.com/sregisters.html}]
 
-~ C API conventions, official, on Github,
-: [a{https://github.com/hjl-tools/x86-psABI/wiki/X86-psABI}]
+~ (MASM but...) Tips from working code, good examples, must-read, maybe re-visit webpage,
+: [a{http://mark.masmcode.com/}]
 
+~ Assembly vs. C examples. Assembly wins. Proves nothing,
+: [a{http://www.azillionmonkeys.com/qed/asmexample.html}]
+
+~ Post about parallel micro evaluation, from the pretext ''how to zero a register', 
+: [a{https://randomascii.wordpress.com/2012/12/29/the-surprising-subtleties-of-zeroing-a-register/}]
++
+
+== Text supplementary links
+Not every link in the text is here, but generally interesting links from individual posts,
+
++dd
 ~ Newish (2013) assembly language IDE. QT desktop,
 : [a{http://dman95.github.io/SASM/english.html}]
 
-~ (MASM but...) Interesting tips, good examples, must-read, maybe re-visit tips webpage,
-: [a{http://mark.masmcode.com/}]
-
-~ Assembly vs. C examples,
-: [a{http://www.azillionmonkeys.com/qed/asmexample.html}]
-
-~ (Windows) Use system calls to allocate on a heap,
-: [a{http://www.kipirvine.com/asm/articles/heap_allocation.pdf}]
-
-~ (Linux) Allocate on a heap,
-: [a{http://x86asm.net/articles/memory-allocation-in-linux/}]
-
-~ Post about parallel micro evaluation, with the pretext of ''how to zero a register', 
-: [a{https://randomascii.wordpress.com/2012/12/29/the-surprising-subtleties-of-zeroing-a-register/}]
 +

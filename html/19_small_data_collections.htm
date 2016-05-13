@@ -1,4 +1,4 @@
-<!DOCTYPE html><html><head><title>19_small_data_collections</title><meta http-equiv="content-type" content="text/html; charset=UTF-8" /><link rel="stylesheet" type="text/css" media="screen" href="../lib/doc.css"/></head><body><article><h1>15 Small data structures</h1><h2>Tables</h2><p>This involves macros. If you prefer, skim. Check the end, too.</p><p>NASM/YASM documentation has an example,</p><blockquote><h2>4.3.9 Concatenating Macro Parameters</h2><p>…</p><pre><code>%macro keytab_entry 2 
+<!DOCTYPE html><html><head><title>19_small_data_collections</title><meta http-equiv="content-type" content="text/html; charset=UTF-8" /><link rel="stylesheet" type="text/css" media="screen" href="../lib/doc.css"/></head><body><article><h1>19 Small data structures</h1><h2>Tables</h2><p>This involves macros. If you prefer, skim. Check the end, too.</p><p>NASM/YASM documentation has an example,</p><blockquote><h5>4.3.9 Concatenating Macro Parameters</h5><p>…</p><pre><code>%macro keytab_entry 2 
 
     keypos%1    equ     $-keytab 
                 db      %2 
@@ -8,20 +8,20 @@
 keytab: 
     keytab_entry F1,128+1 
     keytab_entry F2,128+2 
-    keytab_entry Return,13</code></pre><p>which would expand to</p><pre><code>keytab: 
+    keytab_entry Return,13</code></pre><p>which expands to,</p><pre><code>keytab: 
     keyposF1 equ $-keytab 
                 db 128+1 
     keyposF2 equ $-keytab 
                 db 128+2 
     keyposReturn equ $-keytab 
-                db 13</code></pre></blockquote><p>There’s quite a lot to explain here. First, all the examples we use have a colon for labels, so let’s clear that up. NASM documentation,</p><blockquote><p>The colon after a label is also optional.</p></blockquote><p>Colon or not, these are all labels.</p><p>‘$’ means the address of the current line. Now, aside from NASM ‘directives’, all the assembly lines which do some kind of CPU ‘instruction’ are mapped into memory. A line of assembly goes stright to a line of address. So the adress is the star of this line in memory. Therefore, the address minus ‘keytab’ (‘$‐ is arithemtic, it means <address> minus <x>, it’s not a combination symbol) is the offset from ‘keypos’ of that line with the ‘$’.</p><p>Okay?</p><p>Except a line like,</p><pre><code>    keyposF1 equ $-keytab </code></pre><p>is not CPU instruction, it’s assembly, so that is not put in memory. What is transferred to the CPU is,</p><pre><code>    db 128+1 
+                db 13</code></pre></blockquote><p>A lot to explain here. First, all the examples we use have a colon for labels, so let’s clear that up. NASM documentation,</p><blockquote><p>The colon after a label is also optional.</p></blockquote><p>Colon or not, these are all labels.</p><p>‘$’ means the address of the current line. Now, all lines of assembly code which mark some kind of CPU ‘instruction’ are mapped into memory. A line of assembly goes straight to an address, one‐to‐one. So the address is the start of this line in memory. Therefore, the address minus ‘keytab’ (‘$‐’ is arithmetic, it means ‘address’ minus ‘x’, it’s not a combination symbol) is the offset from ‘keypos’ of that line with the ‘$’.</p><p>Okay?</p><p>Except a line like,</p><pre><code>    keyposF1 equ $-keytab </code></pre><p>is not CPU instruction, it’s assembly, a ‘directive’, so that is not put in memory. What is transferred to the CPU is,</p><pre><code>    db 128+1 
     db 128+2 
     db 13</code></pre><p>but the assembly language knows the labels, and will place offsets in any code that uses them,</p><pre><code>    ; keyposF1 = keytab (from $-keytab) 
     db 128+1 
     ; keyposF2 = keytab + 4 (from $-keytab) 
     db 128+2 
     ; keyposReturn = keytab + 8 (from $-keytab) 
-    db 13</code></pre><p>These values are bytes. As written into memory, they are three sucessive allocated byte spaces. How do we acess htem? Well, as they are bytes, in 64‐bit we will need to do some fixes (this complicates the coded, but I wanted to work from the original NASSM/YASM example)</p><p>First we will need to clear a register to ‘0’. We do not want (unused) upper bytes reading or printing as extra information. Then we need to read into a sub‐register—‘al’ the one‐byte end of ‘rax’, would be the general‐purpose choice. Then do whatever we are going to do with the value,</p><pre><code>SECTION .data
+    db 13</code></pre><p>These values are bytes. As written into memory, they are three successive allocated byte spaces. How do we access them? Well, as they are bytes, in 64‐bit we will need to do some fixes (this complicates the coded, but I wanted to work from the original NASSM/YASM example)</p><p>First we will need to clear a register to ‘0’. We do not want (unused) upper bytes reading or printing as extra information. Then we need to read into a sub‐register—‘al’ the one‐byte end of ‘rax’, would be the general‐purpose choice. Then do whatever we are going to do with the value,</p><pre><code>SECTION .data
 
     spacer: db " : ", 0h
 
@@ -63,10 +63,10 @@ main:
     popNonVolatile
     mov rax,0
     leave
-    ret</code></pre><p>The ‘xor’ line makes sure the whole ‘rax’ register is empty (the code only uses the last byte of the register).</p><p>What’s the point?</p><p>The word ‘table’ has, unfortunately, a dual meaning. To most people, it is a two dimensional array of objects—familiar from data presented in writing, speadsheets, maybe plotting graphs in maths class. But in lower‐level computer languages, it often means a one dimentioal array of objects that represnt more than numbers. Some coders may be aware of how a the high‐level idea of class is actually implemented—it uses a structure called a ‘vtable’ which collects the methods and fields of a class into an array. When a method is called on a class, the call goes to the class (and so is restrained to methods and fields in the class), then code inside the class directs the call to the named entry in the ‘vtable’. So that’s why this structure has it’s name.</p><p>The other way to describe this is to compare with a high‐level language, and say it is a very raw, low level, associative (named) array, or map. It has differences to a high‐level map. A high level ‘map’ will associate strings with values,</p><pre><code>    val m = Map("Anna" -> 67, "Lee" -> 56, "Shiela" -> 89)</code></pre><p>Here we only have a label, an idea only known to the compiler, and not returning a string. Also, the table only uses offsets, so a more accurate description of it’s structure in a high level language would be,</p><pre><code>    val a = Array(67, 56, 89)
-    val aOffset = Map("Anna" -> 0, "Lee" -> 1, "Shiela" -> 2)
+    ret</code></pre><p>The ‘xor’ line makes sure the whole ‘rax’ register is empty (the code only uses the last byte of the register).</p><p>What’s the point?</p><p>The word ‘table’ has, unfortunately, a dual meaning. To most people, it is a two dimensional array of objects—familiar from data in writing, spreadsheets, maybe plotting graphs in maths class. But in lower‐level computer languages, it often means a one dimensional array of objects that represent more than numbers. Some coders may be aware of how the high‐level idea of class is actually implemented—it uses a structure called a ‘vtable’ which collects the methods and fields of a class into an array. When a method is called on a class, the call goes to the class (and so is restrained to methods and fields in the class), then code inside the class directs the call to the named entry in the ‘vtable’. So that’s why this structure has it’s name.</p><p>The other way to describe this is to compare with a high‐level language, and say it is a very raw, low level, associative (named) array, or map. It has differences to a high‐level map. A high level ‘map’ will associate strings with values,</p><pre><code>    val m = Map("Anna" -> 67, "Lee" -> 56, "Sheila" -> 89)</code></pre><p>Here we only have a label, an idea only known to the compiler, and not returning a string. Also, the table only uses offsets, so a more accurate description of it’s structure in a high level language would be,</p><pre><code>    val a = Array(67, 56, 89)
+    val aOffset = Map("Anna" -> 0, "Lee" -> 1, "Sheila" -> 2)
 
-    val leeResult = a(aOffset("Lee")) </code></pre><p>In a high‐level language, this is an unusual approach, inefficient, with little purpose unless the offset needs to be seen or reworkable. But in assembly, this is a very efficient approach—the assembly language hard‐codes the offsets wherever they are used.</p><p>A high‐level map would usually be implemented using strings and a hash‐table of the strings to values. This would be a mutable structure—key/values can be deleted, appended, etc. Also, the keys themselves can be viewed—maps may have methods to iterate both keys and values, return a collection of the keys etc.</p><p>Compared to this, in the macroed assembly structure, keys are invisible—they only exist in the language, and are erased on compilation. And the structure can not be lengthened or shortened (though items in this particular implementation can be updated). Hoever, the structure is very efficient. And, in assembly language, the hard‐coded register names and addresses loose all overall meaning—the structure above overlays the raw meanings, adds a welcome readability.</p><h3>Non macro tables</h3><p>The macros make larger scale work more readable. But, for small tables, the macros are not needed,</p><pre><code>SECTION .data
+    val leeResult = a(aOffset("Lee")) </code></pre><p>In a high‐level language, this is an unusual approach, inefficient, with little purpose unless the offset needs to be seen or reworkable. But in assembly, this is a very efficient approach—the assembly language hard‐codes the offsets wherever they are used.</p><p>A high‐level map would usually be implemented using strings and a hash‐table of the strings to values. This would be a mutable structure—key/values can be deleted, appended, etc. Also, the keys themselves can be viewed—maps may have methods to iterate both keys and values, return a collection of the keys etc.</p><p>Compared to this, in a macro assembly structure, keys are invisible—they only exist in the language. They are erased on compilation. And the structure can not be lengthened or shortened (though items in this particular implementation can be updated). However, the structure is very efficient. And, in assembly language, the hard‐coded register names and addresses loose all overall meaning—the structure above overlays the raw meanings, adds a welcome readability.</p><h3>Non macro tables</h3><p>The macros make larger scale work more readable. But, for small tables, the macros are not needed,</p><pre><code>SECTION .data
 
     spacer: db " : ", 0h
 
@@ -106,7 +106,7 @@ main:
     popNonVolatile
     mov rax,0
     leave
-    ret</code></pre><p>works as well. For very samll tables, the non‐macros version may be prefered.</p><h2>Arrays</h2><p>Define them. Initialised in ‘.data’ and ‘.rodata’, undefined in ‘.bss’</p><pre><code>SECTION .data
+    ret</code></pre><p>works as well. For small tables, the non‐macro version may be preferred.</p><h2>Arrays</h2><p>Define them. Initialised in ‘.data’ and ‘.rodata’, undefined in ‘.bss’</p><pre><code>SECTION .data
     ; array of 10 qwords initialized to 1,2,..,10
     a1: dq 1, 2, 3, 4, 5, 6, 7, 8, 9, 10
 
@@ -155,7 +155,7 @@ SECTION .bss
     popNonVolatile
     mov rax,0
     leave
-    ret</code></pre><p>Notes,</p><ul><li>Like C, the array label returns the address of the array</li><li>Addressing is in bytes (that’s why we multiply by 8, for 64‐bit)</li><li>Array sizes are fixed, so assembler can spot out‐of‐range indexes easily</li><li>No protection against uninitialised data.</li></ul><p>Assembly language can catch out‐of‐range errors in indexing. This amuses me, because high‐level languages struggle hard to contain them. Ok, that’s because assembly language arrays have a fixed size. But, I say, accentuate the positive.</p><p>Otherwise, once you grasp that the brackets are not the same as higher‐level pointer movements, this is fairly straightforward.</p><h3>Multi‐dimentional arrays</h3><p>In higher‐level languages (particularly scipting or object‐orientated languages) it is common to make multi‐dimentional arrays by attaching one array to another,</p><pre><code>SECTION .data
+    ret</code></pre><p>Notes,</p><ul><li>Like C, the array label returns the address of the array</li><li>Addressing is in bytes (that’s why we multiply by 8, for 64‐bit)</li><li>Array sizes are fixed, so assembler can spot out‐of‐range indexes easily</li><li>No protection against uninitialised data.</li></ul><p>Assembly language can catch out‐of‐range errors in indexing. This amuses me, because high‐level languages struggle hard to contain them. Ok, that’s because assembly language arrays have a fixed size. But, I say, accentuate the positive.</p><p>Otherwise, once you grasp that the brackets are not the same as higher‐level pointer movements, this is fairly straightforward.</p><h3>Multi‐dimensional arrays</h3><p>In higher‐level languages (particularly scripting or object‐orientated languages) it is common to make multi‐dimensional arrays by attaching one array to another,</p><pre><code>SECTION .data
     ; array of 10 qwords initialized to 1,2,..,5
     a1: dq 1, 2, 3, 4, 5
 
@@ -167,7 +167,7 @@ SECTION .bss
 
 SECTION .bss
     ; array of 3 qwords uninitialized
-    am: resq 3</code></pre><???As><p>you see, this can be done, but hold up a minute…</p><p>Higher‐level languages which are more detailed about array creation and intialisation often offer all‐in‐one definition of (usually) non‐ragged (‘non‐ragged’ = the sub‐arrays are all the same size) arrays. That’s because assembly/machine code offers the possibility of holding the multi‐dimentional array in one single underlying array, and using indexing to access the ‘sub‐arrays’.</p><p>Say we need an array of 3 arrays of length 5, 3m:x5. We call the multi‐dimentional array ‘am’. ‘am’ is 15 elements long,</p><pre><code>SECTION .bss
+    am: resq 3</code></pre><???As><p>you see, this can be done, but hold up a minute…</p><p>Higher‐level languages which are more detailed about array creation and initialisation often offer all‐in‐one definition of (usually) non‐ragged (‘non‐ragged’ = the sub‐arrays are all the same size) arrays. That’s because assembly/machine code offers the possibility of holding the multi‐dimensional array in one single underlying array, and using indexing to access the ‘sub‐arrays’.</p><p>Say we need an array of 3 arrays of length 5, 3m:x5. We call the multi‐dimensional array ‘am’. ‘am’ is 15 elements long,</p><pre><code>SECTION .bss
     ; array of 15 qwords (3x5) uninitialized
     am: resq 15
 </code></pre><p>An element in a sub‐array of ‘am’ is reached by accessing ‘i<5+j’,/>where ‘i’ and ‘j’ are the two dimensions. This is complicated by the addresses needing to be converted to bytes, i.e. multiplied by 8. So we need the equation ‘i<5*8+j*8’/></p><p>And now some action,</p><pre><code>main:
@@ -187,12 +187,12 @@ SECTION .bss
     popNonVolatile
     mov rax,0
     leave
-    ret</code></pre><h2>Structs</h2><p>For the coverage of these posts, talking about structs is a little advanced. The subject is here because NASM has built in support, and disussion of structs takes us to within touching distance of C (a thought to help you join things together. If you are interested more about the connection between assembler and C, the PCASM book has a vast chapter on generalities of how machine code and C interact)</p><p>First, a struct is an idea that only really occcurs in C (maybe in some other very low high‐level languages). It’s a collection of varying size data types, usually but not always with labels. A pseudo‐code example,</p><pre><code>    struct pos {
+    ret</code></pre><h2>Structs</h2><p>For the coverage of these posts, talking about structs is a little advanced. The subject is here because NASM has built in support, and discussion of structs takes us to within touching distance of C (a thought to help you join things together. If you are interested more about the connection between assembler and C, the PCASM book has a vast chapter on generalities of how machine code and C interact)</p><p>First, a struct is an idea that only really occurs in C (maybe in some other very low high‐level languages). It’s a collection of varying size data types, usually but not always with labels. A pseudo‐code example,</p><pre><code>    struct pos {
         string name;
         int age;
         boolean sex;
         date dateOfBirth;
-    }</code></pre><p>So it’s a collection of elements of different sizes. A struct usually can acesss it’s elements through a label, so it’s more like an array with a table attached or built in (for tables, see the section above a bit). The struct is a lower kind of collection than a high‐level language ‘class’, though. It can not inherit, or do overloading, or any of those actions sometimes called ‘OOP’ (the only similarity is that it holds different sized objects)</p><p>A struct can be made from an array,</p><pre><code>fruit:
+    }</code></pre><p>So it’s a collection of elements of different sizes. A struct usually can access it’s elements through a label, so it’s more like an array with a table attached or built in (for tables, see the section above a bit). The struct is a lower kind of collection than a high‐level language ‘class’, though. It can not inherit, or do overloading, or any of those actions sometimes called ‘OOP’ (the only similarity is that it holds different sized objects)</p><p>A struct can be made from an array,</p><pre><code>fruit:
     ; for 'name'
     resb 32
     ; for 'color'
@@ -214,7 +214,7 @@ SECTION .bss
         at color, dd 55FF44X 
         at quantity, dq 157 
         at pickDate, dq 6754389621
-    iend</code></pre><p>Then we need to dedclare an instance of the struct, using ‘istruc’. This also contains a macro ‘at’. ‘at’ works out the offsets in the completed struct structre. Then we need code,</p><pre><code>
+    iend</code></pre><p>Then we need to declare an instance of the struct, using ‘istruc’. This also contains a macro ‘at’. ‘at’ works out the offsets in the completed struct structure. Then we need code,</p><pre><code>
 SECTION .data
     struc fruit
         name: resb 12
@@ -264,12 +264,4 @@ main:
 
     mov rax,0
     leave
-    ret</code></pre><p>In the view of an assembly language coder who understood the description of tables above, this will be a complex of ideas. In the view of an assembly language beginner who skimmed the description of tables, they will be grateful for a readable action. In the view of a C programmer, an important data type has been born. In the view of a Smalltalk or Ruby prograzmmer, this is shockingly limited, and they will be wondering how in the world some program like a parser could be constructed.</p><p>Hush, we’ve got that far.</p><h3>alignment</h3><??>
-
-+refs
-~ NASM documentation on structs (is in the macros section),
-: [a{http://www.nasm.us/xdoc/2.12.01/html/nasmdoc4.html#section-4.11.10}]
-+
-
-
-</??></???As></article></body></html>
+    ret</code></pre><p>In the view of an assembly language coder who understood the description of tables above, this will be a complex of ideas. In the view of an assembly language beginner who skimmed the description of tables, they will be grateful for a readable action. For a C programmer, an important data type has been born. For a Smalltalk or Ruby programmer, this is shockingly limited, and they will be wondering how in the world some program like a parser could be constructed.</p><p>Hush, we’ve got that far.</p><h3>alignment</h3><p>TODO</p><dl class="refs"><dd>NASM documentation on structs (is in the macros section),</dd><dt><a href="http://www.nasm.us/xdoc/2.12.01/html/nasmdoc4.html#section-4.11.10">http://www.nasm.us/xdoc/2.12.01/html/nasmdoc4.html#section-4.11.10</a></dt></dl></???As></article></body></html>

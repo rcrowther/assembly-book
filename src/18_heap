@@ -1,14 +1,14 @@
 = 17 Heap
-Higher level language have an idea called ''heap'. The idea of ''heap' is often, under the idea of ''memory management', spliced to the idea of ''stack'. We have already seen the idea of ''stack' in assembly language. What of ''heap'? 
+Higher level language have an idea called ''heap'. Under the idea of ''memory management', the idea of ''heap' is often spliced to the idea of ''stack'. We have already seen the idea of ''stack' in assembly language. What of ''heap'? 
 
-First, ''heap' is not a good name for this storage. It has that name because once upon a time it was implemented using a ''heap tree'. Some people call it ''free list storage'.  It might also be called ''casual reusable storage'.
+First, ''heap' is not a good name. The storage has that name because once upon a time it was implemented using a ''heap tree'. Some people call it ''free list storage'.  It might be called ''casual reusable storage'.
 
 ''Heap' doesn't exist in assembly language. In higher-level languages ''heap' is used for what is called ''dynamic storage'. Storage which can be allocated and deallocated on the fly, at runtime, by program code. Storage which has no order of use (like the stack), but is used here and there.
 
 The following is a simple description, but may do to bridge the gap, for our purposes.
 
 == The heap model
-The way heap works is that it allocates a biggish storage at the start of runtime. Abstractly, this space has no type or divisions, it is only space. This neutral allocation could be mimiced in machine code with,
+Heap allocates a biggish storage at the start of runtime. Abstractly, this space has no type or divisions, it is only space. This neutral allocation could be mimiced in machine code with,
 
 ?cb
 Section .bss
@@ -16,35 +16,89 @@ Section .bss
     heap resq dword 1000 
 ?
 
-Allocating storage here or in ''SECTION .data' is the way several, if not all C langauge ''heap' allocations are made, 
+If this seems crude, it is not. C language ''heap' allocations are made using a kernel command ''sys_brk'. This allocates a big chunk of memory before the running application. Another alternative is to use ''sys_mmap()', which uses the operating system to allocate a page. If you prefer them to a big array, both of these calls can be used in assembly language.
+
+Then heap management code looks after the space---allocating, extending, freeing, and reallocating. Here's a C language snippet allocating memory,
 
 ?cb
-    int * array = malloc(10 * sizeof(int));
+    int * cupboard = malloc(10 * sizeof(int));
     if (NULL == array) {
         fprintf(stderr, "malloc failed\n");
         return(-1);
     }
 ?
 
-Likely, though not always, ''malloc' will be implemented as a function which allocates from a lump of data in a ''SECTION .data'. Or some similar space which the operating system reserves.
+The language (C or otherwise) management code will be using sophisticated access systems. It will choose the reusable space size to suit the size of computer RAM. It will likely divide the free space into chunks, and gather pointers to the chunks into lists.  The GNU C library, for example, has a varying strategy depending on size requested, using a tree to track medium-sized allocations. The free-memory manager will track which chunks are in use, and which are not, so they can be reused.
 
-However, the language (C or otherwise) handling this allocation will be using more sophisticated access systems than array indexing. It will choose the reusable space size to suit the size of computer RAM. It will likely divide the free space into chunks, and gather pointers to the chunks into lists.  The GNU C library, for example, has a varying strategy depending on size requested, using a tree to track medium sized allocations. The free-memory manager will track which chunks are in use, and which are not, so they can be reused. Deallocating is by the C command,
+Finally, deallocating is by the C statement,
 
 ?cb.c
-    free
+    free(cupboard)
 ?
 
-and the C++ command,
+and in C++, the statement,
 
 ?cb.c
-    delete
+    delete(cupboard)
 ?
 
 which means ''finished with this chunk of memory, can use for other purposes'.
 
-What we need to know for assembly language coding is this: this kind of dynamic memory allocation needs a large amount of coding, substancial in any language. This is possible in machine code, but you wouldn't and probably shouldn't be wanting to do it unless a library is pulled in. Moreover, using the abilities of some other language is not usually possible. The language itself needs to use it's own address space. 
 
-If you would like to reallocate memory, one way is to build your own raw version, which reuses chunks of an array or something (you may do naturally if you need to handle larger data). The other, awkward way, is to use another languages eccentric dynamic allocator, one that does not use conventional means (for example, a stack allocator).
+== Code
+Call ''malloc' and ''free' from assembly code,
+
+?cb
+SECTION .rodata
+    err_1: db cString("malloc failed")
+
+
+
+SECTION .text
+
+extern malloc
+extern free
+
+
+global main
+main:
+    frame
+
+
+    ; int * array = malloc(1 * sizeof(int));
+    mov rdi, 4
+    call malloc
+
+
+    ; use malloc'ed space
+    println64 rax
+    mov qword[rax], 78
+    println64 [rax]
+
+
+    ; if (NULL == array) {
+    ;    fprintf(stderr, "malloc failed\n");
+    ; }
+    cmp rax, 0
+    jnz malloc_ok
+    printlnStr  err_1
+
+    malloc_ok:
+        mov rdi, rax
+        call free
+
+
+    unFrame
+    mov rax,0	
+    ret
+?
+
+== Memory, yeah
+Efficient complex dynamic memory allocation needs a large amount of coding. This is possible in machine code, but you wouldn't and probably shouldn't be coding this.
+
+That said, the efficiency of higher-level language dynamic allocation has often been a problem. If the needs of the code are simple (a big array, say) then purpose-built machine code may be more effective. A raw version reuses chunks of an array. If that is all you need, it will be faster than a heap. 
+
+If the needs are complex, use a dynamic allocator from a library. A C library has all you need.
 
 +.refs
 ~ Wikipedia, dynamic allocation,
@@ -52,4 +106,10 @@ If you would like to reallocate memory, one way is to build your own raw version
 
 ~ Wikipedia, C memory allocation,
 : [a{https://en.wikipedia.org/wiki/C_dynamic_memory_allocation}]
+
+~ (Windows) Use system calls to allocate on a heap,
+: [a{http://www.kipirvine.com/asm/articles/heap_allocation.pdf}]
+
+~ (Linux) Allocate on a heap,
+: [a{http://x86asm.net/articles/memory-allocation-in-linux/}]
 +
