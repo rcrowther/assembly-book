@@ -1,0 +1,7 @@
+
+==.left Stumbling into
+=.center Linux x86 Assembly Language
+
+*.page_img{../images/stack_frame.svg}
+
+====.text_right Robert Crowther

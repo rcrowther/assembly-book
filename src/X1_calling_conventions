@@ -6,7 +6,8 @@ Output formats require an underscore on visible symbols.
 The memory model needs to be known. See NASM documentation.
 
 === Called by C
-If parameters are to be used, wrap in,
+If parameters are to be used, preserve non-volatile registers,
+
 
 push bp
 mov bp sp
@@ -46,7 +47,7 @@ Most outputs aside from ELF require an underscore on visible symbols.
 Function parameters go on the stack, right-left reverse order (first argument is pushed last).
 
 === Called by C
-If parameters are to be used, wrap in,
+If parameters are to be used, preserve non-volatile registers,
 
 push ebp
 mov ebp esp
@@ -91,16 +92,15 @@ When integer and float parameters are mixed, both sets of inputs are stepped, us
 
 
 === Called by C
-RBX, RBP, RSI, RDI, R12--R15, and XMM6 to XMM15 are non-volatile. If used, they must be restored.
+If parameters are to be used, preserve non-volatile registers,
 
-If integer parameters are to be used, wrap in,
+==== System V
+++
+@ RBX, RBP, RSI, RDI, R12--R15, and XMM6--XMM15
++
 
-push ebp
-mov ebp esp
-...
-mov esp ebp
-pop ebp
-ret
+If used, they should be be restored.
+
 
 === Calling C
 ; do not use underscore for ELF

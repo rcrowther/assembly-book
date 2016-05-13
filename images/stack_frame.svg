@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.0//EN" "http://www.w3.org/TR/2001/PR-SVG-20010719/DTD/svg10.dtd">
+<svg width="64cm" height="20cm" viewBox="-662 75 1270 386" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+  <g>
+    <rect style="fill: #00c839" x="100" y="80" width="507" height="80"/>
+    <rect style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" x="100" y="80" width="507" height="80"/>
+  </g>
+  <g>
+    <rect style="fill: #00c839" x="100" y="180" width="507" height="80"/>
+    <rect style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" x="100" y="180" width="507" height="80"/>
+  </g>
+  <g>
+    <rect style="fill: #00c839" x="100" y="280" width="507" height="80"/>
+    <rect style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" x="100" y="280" width="507" height="80"/>
+  </g>
+  <g>
+    <rect style="fill: #00c839" x="100" y="380" width="507" height="80"/>
+    <rect style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" x="100" y="380" width="507" height="80"/>
+  </g>
+  <g>
+    <rect style="fill: #0083c8" x="-660" y="180" width="500" height="80"/>
+    <rect style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" x="-660" y="180" width="500" height="80"/>
+  </g>
+  <g>
+    <rect style="fill: #0083c8" x="-660" y="300" width="500" height="80"/>
+    <rect style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" x="-660" y="300" width="500" height="80"/>
+  </g>
+  <g>
+    <line style="fill: none; fill-opacity:0; stroke-width: 6; stroke: #000000" x1="-160" y1="220" x2="37" y2="220"/>
+    <polygon style="fill: #000000" points="37,230 57,220 37,210 "/>
+    <polygon style="fill: none; fill-opacity:0; stroke-width: 6; stroke: #000000" points="37,230 57,220 37,210 "/>
+  </g>
+  <g>
+    <path style="fill: none; fill-opacity:0; stroke-width: 6; stroke: #000000" d="M -160 340 C -48,336 10,313 -115.83,244.052"/>
+    <polygon style="fill: #000000" points="-111.024,235.283 -133.369,234.442 -120.635,252.822 "/>
+    <polygon style="fill: none; fill-opacity:0; stroke-width: 6; stroke: #000000" points="-111.024,235.283 -133.369,234.442 -120.635,252.822 "/>
+  </g>
+  <g>
+    <line style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" x1="-122" y1="315" x2="91.7355" y2="127.259"/>
+    <polygon style="fill: #000000" points="95.0352,131.016 99.2487,120.66 88.4358,123.503 "/>
+    <polygon style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" points="95.0352,131.016 99.2487,120.66 88.4358,123.503 "/>
+  </g>
+  <g>
+    <line style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" x1="-120" y1="340" x2="90.3431" y2="225.267"/>
+    <polygon style="fill: #000000" points="92.7374,229.657 99.1221,220.479 87.9489,220.878 "/>
+    <polygon style="fill: none; fill-opacity:0; stroke-width: 2; stroke: #000000" points="92.7374,229.657 99.1221,220.479 87.9489,220.878 "/>
+  </g>
+  <text font-size="56.4444" style="fill: #000000;text-anchor:start;font-family:URW Chancery L;font-style:italic;font-weight:500" x="-640" y="240">
+    <tspan x="-640" y="240">RBP </tspan>
+  </text>
+  <text font-size="56.4444" style="fill: #000000;text-anchor:start;font-family:URW Chancery L;font-style:italic;font-weight:500" x="-640" y="360">
+    <tspan x="-640" y="360">RSP </tspan>
+  </text>
+  <text font-size="45.1556" style="fill: #000000;text-anchor:start;font-family:URW Palladio L;font-style:normal;font-weight:700" x="140" y="120">
+    <tspan x="140" y="120">-8</tspan>
+  </text>
+  <text font-size="45.1556" style="fill: #000000;text-anchor:start;font-family:URW Palladio L;font-style:normal;font-weight:700" x="160" y="220">
+    <tspan x="160" y="220">0</tspan>
+  </text>
+  <text font-size="45.1556" style="fill: #000000;text-anchor:start;font-family:URW Palladio L;font-style:normal;font-weight:700" x="140" y="320">
+    <tspan x="140" y="320">+8</tspan>
+  </text>
+  <text font-size="45.1556" style="fill: #000000;text-anchor:start;font-family:URW Palladio L;font-style:normal;font-weight:700" x="120" y="420">
+    <tspan x="120" y="420">-2*8</tspan>
+  </text>
+</svg>
