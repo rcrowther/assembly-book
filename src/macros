@@ -1,0 +1,40 @@
+
+== Macros
+
+Documentation says,
+
+#bq
+NASM contains a powerful macro processor ...
+#
+
+I would not say any C-like preprocessor is ''powerful'---""awkward and limited" would be what I say... not the same spec as Tex or a LISP, are they? Perhaps we can agree on the word ''useful'?
+
+
+There's a lot of information misssing from official documentation. Where do macro definitions go? 
+
+Can a single line macro definition be used as a function, an instruction-substitute? No. This will fail,
+
+?codeblock
+%define printStr(a)
+printStr(a)
+?
+
+?codeblock
+> error: parser: instruction expected
+?
+
+That's a multi-line macro,
+
+?codeblock
+%macro  printStr 1 
+%endmacro
+?
+
+
+?codeblock
+    printStr L44 
+?
+
+Can a multi-line macro expand into another multiline macro? No.
+
+

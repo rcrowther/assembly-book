@@ -1,0 +1,12 @@
+Written in (basic) TML
+
+Compile using an installed version of TML. From the top folder,
+
+= Github README
+tml -v -uml -g markdown /home/rob/Documents/bfc/assembly_coding/text/README /home/rob/Documents/bfc/assembly_coding
+
+= HTML compile
+From top folder,
+
+tml -v -uml -g htmlCB -wp "../lib/doc.css" /home/rob/Documents/bfc/assembly_coding/src /home/rob/Documents/bfc/assembly_coding/html/
+

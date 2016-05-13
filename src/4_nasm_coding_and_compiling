@@ -1,0 +1,233 @@
+= 3 NASM coding and compiling
+Ok, I know you're all ready to go, but we needed the previous sections to cover the groundwork. End of this one, we'll have the first code.
+
+I warn you now, it won't do anything, but it will be compiling and executing.
+
+
+
+== The Assembly Language of NASM
+
+=== Sections
+As we saw in the previous post, ELF output files have ''sections'. These are defined in NASM by label-like commands,
+
+#dd
+~ SECTION .text
+: contains the instructions that is executed. The only section that can be executed. Treated as read-only data once the program is run.
+
+~ SECTION .data
+: contains initialised data. It cannot be executed,  but may be read from and written to when the program is run. Contains ''dx' type pseudo-instructions.
+
+~ SECTION .bss
+: contains uninitialised data.  It cannot be executed, but may be read from and written to when the program is run.  Contains resx pseudo-instructions.
+
+~ SECTION .rodata
+: contains initialised read-only data. It may not be written to. Contains ''dx' type pseudo-instructions.
+#
+
+
+
+=== Spacing and layout
+NASM is generous in it's handling of layout.
+
+Space anywhere is skipped, empty lines are skipped, comments can end lines or be alone on a line, non-code statements can be in several orders, tabs or spaces are both acceptable.
+
+Those of you who use text-based macro languages, or the legendary GNU ''make' tool, will be glad to hear this.
+
+
+
+=== Macros
+NASM has a system for generating repetitive code, macros. As well as defining new and repeated material, macros can rename existing material (often to more sensible names). 
+
+If you have not used a macro system before, then I have a problem. Macro systems are fundamentally different to the usual forms of computer coding. They are very powerful, fast to compile, and a pain in the neck to use. Macro definitions get hairy very quickly. In these posts, I can't really cover how to code macros.
+
+So what I am going to do is this. I will tell you that macros mainly allow a coder to ''template' repeatedly used material. This can save a lot of coding. However, knowing about macros is not important to learning the guts of assembly language. I tell you how to recognise them, then you can skim them if you see them. Come back if you need to. 
+
+Macros and macro material are introduced with the ''%' symbol e.g.
+
+?codeblock
+%define myNameString() "Robert Crowther"  
+?
+
+Now you see them. Moreover, I will always put macro definitions at the end of a post, so you can idly glance, or ignore them. Ok?
+
+If you've used macros before---NASM macros are reputedly fairly standard for an assembly language compiler. The NASM Reference Manual suggests they are not unlike TASM or MASM macros. In common terms, NASM macros are similar to the C pre-processing system, but have a powerful (nestable) addition called ''context'.
+
+
+== Write a program
+Make a file called ''hw.asm', containing the following. For this first code, I will detail the 32-bit variant,
+
+===== x86 32-bit
+?codeblock
+;
+; This program runs in 32-bit protected mode.
+;  build: nasm -f elf -F stabs hw.asm
+;  link:  ld -o hw hw.o
+;  run: ./hw
+;
+
+SECTION .data
+
+SECTION .bss
+
+SECTION .text
+
+global main
+main:
+   ret
+?
+
+
+===== x86 64-bit
+?codeblock
+;
+; This program runs in 64-bit mode.
+;  build: nasm -f elf64 -F stabs hw.asm
+;  link:  gcc -o hw hw.o
+;  run: ./hw
+;
+BITS 64
+
+
+SECTION .data
+
+SECTION .bss
+
+SECTION .text
+
+global main
+main:
+
+   mov rax,0
+   ret
+?
+
+===== Notes
+The 64-bit version uses,
+++
+@ ''BITS 64' to enforce fulll 64-bit operation
+@ 64-bit registers (e.g. ''rax' instead of ''eax', ''rbx' instead of ''ebx', etc.)
+@ ''-f elf64', not ''-f elf ', in the build command
+@ a full ''gcc' compiler command when linking
++
+
+In the 64-bit version, ''BITS 64' is usually not needed, as NASM guesses the bit-size from the output format selected. However, including the statement may may cover some more advanced behaviour.
+
+''global' says the following name/symbol is an entry point. The name/symbol will be visible to code looking at the compiled file. This ''global' statement is followed by a label name, ''main'. Usually, this name can be anything, it is a definition.
+
+However, for our purposes, this particular ''global' statement must define a label named ''main'. We are going to use GCC to link files together, so GCC needs to see a C programming-like entry point. In C that entry point is called ''main'. Call the label anything else, and the code may compile, but will not run/execute.
+
+
+
+
+== Compile and link the program
+Use the program NASM,
+
+==== NASM command format
+This is all you need to know about the program ''nasm' (there's more, of course, but you do not need it),
+
+?cb
+Usage: nasm -f <output format> -F <debug format> files...
+?
+
++dl
+~ -f
+:  output format
+~ -l
+: create a file detailing the compilation into machine code
+~ -F
+: debugging format
++
+
+Note: NASM documentation,
+
+#bq
+??
+valid debug formats for 'elf64' output format are ('*' denotes default):
+    dwarf     ELF64 (x86-64) dwarf debug format for Linux/Unix
+  * stabs     ELF64 (x86-64) stabs debug format for Linux/Unix
+?
+#
+
+Right, from the commandline, pick the type of your computer (sorry, ''architecture'), and,
+ 
+===== x86 32-bit
+
+?cb
+> nasm -f elf -F stabs hw.asm
+> ld -o hw hw.o
+?
+
+or,
+
+===== x86 64-bit
+
+?cb
+> nasm -f elf64 -F stabs hw.asm
+> gcc -o hw hw.o
+?
+
+Note how a full 'gcc' statement is required for 64-bit.
+
+
+
+== Run the program
+By now, wherever you are editing on the computer, you have three files; ''hw.asm' is the code we are editing, ''hw.o' contains the compiled object output (now an ELF file containing binary code), and ''hw' is an executable ELF file (which has been linked with any external code we are using---at the moment, none). 
+
+Result! Run ''hw',
+
+
+?codeblock
+> ./hw
+?
+
+Nothing happens. 
+
+But at least it did not fail (well, if you got this far, I guess not). And it compiled super-fast, and is very small.
+
+
+
+
+=== Looking at NASM output
+Sometimes interesting, add the -l option,
+
+?cb
+> nasm -f elf64 -l log.lst -F stabs hw.asm
+?
+
+This writes a file ''log.lst' to the same location where the file was run. The file contains the source code, annotated with the numeric codes generated. This is interesting, though not, for many, of much use.
+
+The file also includes information on how macros were expanded, showing the macros in place. For a quick confirmation macros are working the way you wish, this can be valuable.
+
+== Instruction sequence reference
+Compile, link, run,
+
+===== x86 32-bit
+?cb
+> nasm -f elf -F stabs hw.asm
+> ld -o hw hw.o
+> ./hw
+?
+
+or,
+
+===== x86 64-bit
+
+?cb
+> nasm -f elf64 -F stabs hw.asm
+> gcc -o hw hw.o
+> ./hw
+?
+
+
+A game some people like to play is to make the smallest program they can in a language, and read how big it is. On my machine, the above compiles to 8.8K. Not sure what this proves, aside from maybe hinting at what kind of language it is. Try [a{http://www.muppetlabs.com/~breadbox/software/tiny/teensy.html} teensy file] for a very small file and to learn about ELF.
+
+== Well...
+Well, if you try running the final executable file, you will find nothing happens. Or you may recognise this as a clean exit, but it seems underwhelming.
+
+But, if you compiled with the ''-l' option, you can see in ''log.lst' that the file was not empty. It contained code. Ok, the executable has no result.  But often in programming exercises, you wind up fighting with the tools for half an afternoon. Then the first start on substantial code is an error. Whereas, it's unlikely you needed more than a few minutes to install packages of NASM and GCC. You'll have spent most of that reading over background material.
+
+This ain't so bad.
+
+
+
+

@@ -1,0 +1,86 @@
+<!DOCTYPE html><html><head><title>12_stack_and_frames</title><meta http-equiv="content-type" content="text/html; charset=UTF-8" /><link rel="stylesheet" type="text/css" media="screen" href="../lib/doc.css"/></head><body><article><h1>12 Stack frames</h1><p>Back in <a href="5_external_calls_and_printing">chapter 5 External Calls and Printing</a>, without explaining fully, we dived into using the stack.</p><p>Let’s establish the basics.</p><ul><li>The stack moves downwards</li><li>The stack pointer (register SP, EXP, RSP) holds the address of the last pushed item.</li><li>The base pointer (register BP, EBP, RBP), if it has been set, usually points to the last item (lowest address) pushed in a previous stack frame</li></ul><p>So,</p><pre><code>mov rbp, rsp
+
+push 79
+push 87
+
+; rax = 79
+mov rax, [rbp-8]
+; rax = 87
+mov rax, [rbp-16]
+
+; rax = 87
+mov rax, [rsp]
+; rax = 79
+mov rax, [rbp+8]</code></pre><p>So.</p><pre><code>SECTION .text
+global main
+
+main:
+    push rbp
+
+    printChar 'b'
+    printlnChar ':'
+    println64 rbp
+    printChar 's'
+    printlnChar ':'
+    println64 rsp
+
+    pop rbp
+    mov rax,0
+    ret</code></pre><p>results,</p><pre class="result"><code>b:
+0
+s:
+140736179997408</code></pre><p>For what it is worth, the next line of code was located at memory address ‘140736179997408’.</p><h2>stack ranges</h2><p>The CPU stack contains much data, of different types and purpose. Treating the stack as one pile of data rapidly becomes confusing.</p><p>There exists a convention to solve this. When code moves on to use the stack for a different purpose, it can subdivide the stack into areas. Each area is called a ‘frame’.</p><p>The way this works is that the base pointer is reajusted to the current stack top/pointer position. Then the top/pointer position is decremented to add free space to the stack. The result is, the base pointer and stack/top pointer now define a range within the stack.</p><p>If we do this, after the frame is used, we must be able to retrieve the last ‘frame’, otherwise the data is near‐useless. So before the new range of stack indexes is defined, the value of the old base is pushed to the stack (presumably the code which defined the previous frame knows how big it is, but it will need the base pointer set to the position it was working from). We end up with,</p><p><img src="stack_frames"/></p><p>The code looks like this,</p><pre><code>    ; save calling function's base pointer address,
+    ; for later reset
+    push rbp     
+
+    ; set the base as the current pointer (start of free area)
+    mov rbp, rsp 
+
+    ; allocate a bit of the free space to create a range of free space
+    ; in this case, 4 push places
+    sub esp, 4   </code></pre><p>Setup is now,</p><pre>rbp -> [original rbp]
+       [?]
+       [?]
+       [?]
+rsp -> [?]</pre><p>The return code is,</p><pre><code>
+    ; back the stack pointer to the beginning of range of free space
+    ; add esp, 5 
+
+    ; can be done more conveniently as...
+    mov rsp, rbp
+
+    ; restore ebp 
+    pop ebp</code></pre><p>Setup is now,</p><pre>ebp -> original rbp
+
+rsp -> [(original rbp)]
+       [?]
+       [?]
+       [?]
+       [?]</pre><p>This snippet of code is robust. Whatever happens to the stack pointer (if the base pointer is only used for its given purpose, and data not popped indiscriminately from the stack), the stack state is restored.</p><h1>CPU instruction support</h1><p>Added in the 186 (so near‐universal),</p><dd class="htz"><dd>ENTER</dd><dt>Modifies stack for entry to procedure for high level language. Takes two operands: the amount of storage to be allocated on the stack, and the nesting level of the procedure.</dt><dd>LEAVE</dd><dt>Releases the local stack storage created by the previous ENTER instruction.</dt></dd><p>Reputedly, these are not used very often. The story is that they can be slower than the single instructions.</p><p>Of mild associated interest, since the 386, these instructions,</p><dd class="htz"><dd>SYSENTER</dd><dd>SYSEXIT</dd></dd><p>which first emerged as SYSCALL/SYSRET on the AMD K6.</p><h2>calls</h2><p>When the instruction ‘call’ is issued, the return address is pushed to the stack. For nested calls, return adresses are repeatedly pushed (adding calls is sometimes called ‘winding’, removing them called ‘unwinding’).</p><h2>Stack frames</h2><p>More confused nomenclature. What we called a stack range is often called a stack frame. But a stack frame, as often refered to in assembly language literature on sub‐programs, means a specific subset of stack range usage.</p><p>Stack frames are an area/range of a stack used to store data for a sub‐program. So a frame may contain,</p><ul><li>locals</li><li>return address</li><li>parameter values</li></ul><p>Mention of a frame often suggests that the base pointer has been adjusted.</p><p>The reason for using stack frames for sub‐program data is because the sub‐program data, like the sub‐program code, ought to be gathered in one place. If it is, the overall program becomes more robust, and easier to theorise about.</p><p>And you need to be aware of stack winding and unwinding to use external call conventions.</p><p>That said, assembly language made no demand on you to form stack frames for sub‐program calls. If you want, use static variables and registers. Use of frames only makes a program more robust and easier to talk about. It is use of the stack that makes local variables and recursive sub‐program calls possible.</p><h2>Call stack</h2><p>High‐level language literature often refers to the call stack. This means the list of sub‐programs called, how they are ordered, and how they return.</p><p>In assembly language, the main stack is a call stack—it contains call data. But it also contains much more (parameters, local variables, advanced arithmetic results…) that is directly acessible and has probably been manipulated. In assembly language, these details are not abstracted away.</p><p>It is probably best not to refer to the CPU stack in assembly language as a ‘call stack’. It is the CPU stack, which contains call data.</p><h2>64‐bit processing and external calls</h2><p>When using 64‐bit external calls, several registers are used to pass the initial parameters.</p><p>In 32‐bit assembly programs I have found, registers are used in a general way, like global variables. Maybe the code brackets in a ‘pusha’/‘popa’ combination here and there, but the use of registers remains fairly fluid and through‐going.</p><p>But in 64‐bit code, as soon as an external call is made, this becomes difficult. The call will potentially use useful general registers like ‘rcx’. Using the extended registers as a shadow is not possible either, as ‘r8’ and ‘r9’ may need to be considered too.</p><p>There is no negociating this. Parameter passing by register is often convenient, and sometimes fast. The payoff is that registers containing significant material will need to be backed into the stack. Significant data which needs to persist across external calls must probably start on the stack.</p><p>Which is a sort of warning, I suppose. Several utility programs, especially those that print out, will took very different in 32‐bit and 64bit versions. Sure, the offset adressing of 32‐bit versions will be dropped for 64‐bit, but the 64‐bit versions will gain a fair few more ‘push’/‘pop’s.</p><h2>The stack</h2><p>The PUSH, POP, PUSHA (push all registers), and POPA (pop all registers)</p><h2>Macros</h2><p>Since coders con’t go for it, and frames are a concept that go beyond sub‐program calls,</p><pre><code>; Make a new stack frame.
+;
+; @param space to be allocated
+%macro  frame 1
+    push ebp     
+    mov ebp, esp 
+    sub esp, %1
+%endmacro
+
+
+; Make a new stack frame.
+;
+; No space is allocated
+%macro  frame 0
+    push ebp     
+    mov ebp, esp 
+%endmacro
+
+%macro  frameIdx 1
+    push ebp     
+    mov ebp, esp 
+    sub esp, %1
+%endmacro
+
+%macro  unFrame 0
+    mov esp, ebp
+    pop ebp
+%endmacro</code></pre></article></body></html>

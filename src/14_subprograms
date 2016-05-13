@@ -1,0 +1,263 @@
+= 13 Sub-programs---functions and procedures
+As a beginner, I ought to note my surprise. I had no idea that a CPU has instructions for internal sub-program calls---I though the controls were all jumps. But they do, even if the instructions are rather raw. ''call' pushes the current address to the stack then makes an unconditional jump.''ret' pops the return then jumps back,
+
+?cb
+SECTION .rodata
+    soulJacker: db "Thirty-three years of tough luck", 0h
+
+
+SECTION .text
+global main
+outputLine:
+    push rsi
+    printlnStr soulJacker
+    pop rsi
+    ret
+
+main:
+    push rbp
+
+    call outputLine
+
+    pop rbp
+    mov rax,0
+    ret
+?
+
+
+
+The cost is about the same as the seperate instructions, so the instructions are a convenience only (''call' latency 4, ''push' latency 3, ''jmp' latency 1).
+
+Since the return address is on the stack, stack manipulations in a call block must be balanced.
+
+rsi is pushed explicitly. For some reason the macros pushAll and PopAll inside printlnStr do not work?
+
+A few design decisions can be, or should be, made with functions.
+
+Terminology is muddled again, though not badly. Compiliers usually call some action which returns nothing a ''statement'. High-level languages often call a sub-program that returns nothing a ''function', while a sub-program that returns data is called a ''proceedure'. Diverging somewhat, a ''method' is a sub-program attached to some data by type, so assembly language rarely has methods.
+
+I don't want to call them sub-programs, so I'm pretty much sticking to the word ''function', unless the sub-program returns data.  
+
+== Preserving state
+As general rule, sub-programs should preserve the state of all registers they use. Register preservation tends to get ignored in example programs, as it complicates the code, and the code is the whole of the program. However, it means the example is not reusable.
+
+Until 64-bit, the easy way to do this is,
+
+?cb
+; push all basic registers
+pusha
+; pop all basic registers
+popa
+? 
+
+This action works in all situations, but is inefficient, saving registers which may go unused. A comment I saw suggested the instruction was not upgraded to 64-bit for this reason. AThe instruction pair has uses, though, for debugging and to wrap extensive code.
+
+In 64-bit, register saving needs to be done manually.
+
+=== 64-bit and C calls
+In 64-bit, when C calls are made inside a sub-program, preservation of registers becomes more complex. C calls use several registers themselves.
+
+Assignment to the call registers is ok, but manipulation within them is looking for trouble. Here is the System V list,
+
+?cb
+    rdi
+    rsi
+    rdx
+    rcx
+    r8
+    r9
+?
+
+There are several registers here with notionally useful purpose, such as ''rcx', the counting register. Like the others, this register is defined as volatile, so after a C call may return with a different value. It may not, but that is not assured, and can lead to trouble.
+
+Worse, making C calls is probably one of the first actions a beginner will want to take.
+
+However, none of the non-volatile registers are parameter registers, so they can be used, with guarenteed preservation through C calls,
+
+?cb
+    rbx
+
+    r12
+    r13
+    r14
+    r15
+?
+(''rbp' is also a non-volatile and not a parameter register, but not recommended for general use)
+
+or values can be pushed and popped round the call.
+
+
+== Flag state preservation
+
+
+== How to pass parameters---Stack or registers?
+
+The obvious way to pass pareameters is to use the stack. However, this is not the only or best way. After all, C calling conventions for 64-bit x96 computing use registers for the first few parameters. This is faster, and though use of registers may seem to interfere with other code, the necessary values may already be loaded. Backing up registers is plainer code and less error-prone than re-adjusting the stack pointer. On the other hand, parameter passing by the stack is a general method which will handle any number of parameters.
+
+Your choice.
+
+== Parameters---references or not?
+How do values get passed to a function? Well, assembly language has no opinion on this, which can be refreshing. That said, a quck recap of strategies.
+
+So far, we have passed most data in various ways ''by reference'. This was, reputedly, the old way of Algol.
+
+?cb
+testInt: dq 87
+testInt2: equ 17
+
+out: 
+
+    print64 rdi
+    print64 rdi
+
+mov rdi, testInt
+mov rdi, testInt2
+call out
+?
+
+The allocated storage is passed by passing it's address. Also, the ''equ' value can be viewed (not by every theory, but some) as passed in a ''call-by-name way'. However that name->value is resolved, it is immutable, and visually referenced.
+
+
+Nowadays, higher-level languages have centred round the idea of ''call-by value'. This can be a group of strategies, which mean data supplied to the function is evaluated befoe being passed, then bound to the parameter. What is important about this strategy is that the evaluation/binding means that variale data is copied in to parameter values. This means the function code can not interfere with the original values---the resulting data is is ''scoped'. Thus removing a truckload of all-too-frequent errors.
+
+?cb
+
+?
+
+Frankly, the nomenclature round this subject is a mess. There are permutations, such as ''call-by-sharing', where assignment will not be visible to calling code, but mutation will. And ''copy-restore', where data is visible but only to the caller, if other threads use the data, it is copied. 
+
+At least we've mentioned these possibilities are there, and can be deployed, and the consequences for coding are as relevant to assembly language as they are to higher-level languages.
+ 
+[a{https://en.wikipedia.org/wiki/Evaluation_strategy}]
+
+
+== How to return values
+Again, assembly language leaves all possibilities open,
+
+One way is to pass references to mutable objects. Then the mutation is visible to calling code. A solution often used in highly-optimised C code.
+
+The other way is to return values by pushing to the stack, or by a register. Unlike many higher-level languages, assembly language gives options for returning many values (regardlerss of input parameters---in assembly languagem, input and output are use the same methods, so may be called complementary methodology).
+
+However, as with input parameters, output parameters need notation and handling to restore pre-existing state. This is particularly true if returns are made through the stack. The return address needs to be handled.
+ 
+an example...???
+
+=== Cleaning up
+Cleaning up after a method call can be done in the calling code, or in the function itself.
+
+Advantages to cleaning up in the calling code are that the function will have immediate information on the number of parameters and their type, which is a very strong arguemment. On the other hand, cleaning up in the function means that the function code must preserve and re-enstate the return address, which is messy.
+
+Beyond that, there is a conceptual advantage to cleaning up in calling code. Calling code initiates the call, so it is perhaps the calling code's responsibility to clean up---and cleaning up outside the function keeps function code neat and to the purpose. However, this means functions, and functions that return data (proceedures) probably must return the number of items to remove from the stack. Higher-level macros can do this consistently, but it's an awkward solution for small machine code programs.
+
+So it's your choice, and your choice may well be informed by coding circumstances, and the intent of the code.  
+
+== local variables
+Well, there are two ways here. While assembly coding, you may be able to make data static---as constants with ''equ' or or variables with db ddeclarations. As we have done in all examples.
+
+But this is not, in the terms higher-level languages use, ''stuctured'. Specifically, you may want to make variable scope limited to the function itself. This prevents mistakes while coding, and allows recursive proceedure calls. 
+
+Making local scoped variables can be done in two ways. Yet again, the stack can be used with the ''stack-frame' trick. Or, if available, a lump of dynamic storage can be used. Idealy this would be a stack itself, or some kind of list, but you may get some distance using a re-usable array and storing offset/start positions (same thing really, the start positions would be an implicit stack).
+
+
+Crenshaw13
+
+==========
+
+
+== Printing using sub-programs
+The code in the previous post printed a string out, but only once. In programming, we will often want to print out many strings. We dond't want to repeat code all the time. We need a sub-program.
+
+Ok, we want to use printing, maybe several times, lets make this into a function. While we do that, let's have two versions---printing with newline, and printing sequentially. To test that, the newline is dropped from the test string. Let's agree on a register to use (''rdi') for the single parameter (a string).
+
+?codeblock
+BITS 64
+
+
+
+
+extern printf
+
+SECTION .data
+    printTest: db 'Aye', 0h
+    printlnFmt: db "%s", 10, 0
+
+SECTION .text
+
+; @params rdi String
+print:
+    push rbp
+    call printf
+    pop rbp
+    ret
+
+; @params rdi String
+println:
+    push rbp
+    mov rsi, rdi
+    mov rdi, printlnFmt
+    call printf
+    pop rbp
+    ret
+
+global main
+main:
+    push rbp
+
+    mov rdi, printTest
+    call print
+    mov rdi, printTest
+    call print
+    mov rdi, printTest
+    call println
+
+    pop rbp
+    mov rax,0	
+    ret
+?
+
+This uses the op-code for calling, a jump and return, provided on x386 architectures. Ugly, but easy.
+
+Note that there is still no form of parameter passing, this has to be done manually. This is machine code, so I guess we put up with it.
+
+
+== Storage and persistence of registers
+One thing is overlooked, though. All our original program did was print ""Aye". Now this is a function, we expect this code to supplement other code. But when doing that, it will interfere, overriding the ''rdi' and ''rdi' registries. If we were doing something with those registries, the data is lost... all for a simple printline. 
+
+To get ''printf' going, the stack base was saved and reloaded. We need to do the same thing with ''rdi' and ''rsi'. Now, the truth is, this often needs doing. The original instruction set for x86 had ''pusha' and ''popa' (pop all') instructions. TheSe have been criticisised, because they included redundancy. Still, they were a good catch-all. Unfortunately for x86-64, these instructions do not work. Reasons seem unknown, but many developers had moved to hand-crafting registers they needed to save. Which is a pain for beginners and general code development  (secure->optomised).
+
+Let's fix thaqt with a macro. Right now,
+
+?codeblock
+; Push several registers to the stack
+; 
+; Pushes rax, rcx and rdx
+;
+; This should be enough to generally cover (small) C calls
+; rbx, rbp, rsi, rdi should be covered. However
+; rsi may need persisting, too. 
+%macro  pushAll 0
+    push rax
+    push rcx
+    push rdx
+    ; r8 thru r11
+%endmacro
+
+; Pops several registers to the stack
+; 
+; Pops rax, rcx and rdx.
+;
+; This should be enough to generally cover (small) C calls
+; rbx, rbp, rsi, rdi should be covered. However
+; rsi may need persisting, too.  
+%macro  popAll 0
+    pop rdx
+    pop rcx
+    pop rax
+    ; r8 thru r11
+%endmacro
+?
+
+We don't care if it's fancy coding or not. It's a secure start.
+
+
+

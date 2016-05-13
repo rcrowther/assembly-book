@@ -1,0 +1,120 @@
+dump_stack:
+	enter   0,0
+	pusha
+	pushf
+
+	lea     rax, [rbp+20]
+	push    rax             ; original ESP
+	push    qword [rbp]     ; original EBP
+	push	qword [rbp+16]   ; # of dump
+	push	qword stack_format
+	call	printf
+	add	rsp, 16
+
+	mov	rbx, [rbp]	; ebx = original ebp
+	mov	rax, [rbp+32]   ; eax = # dwords above ebp
+	shl	rax, 2          ; eax *= 4
+	add	rbx, rax	; ebx = & highest dword in stack to display
+	mov	rdx, [rbp+32]
+	mov	rcx, rdx
+	add	rcx, [rbp+24]
+	inc	rcx		; ecx = # of dwords to display
+
+    stack_line_loop:
+	    push	rdx
+	    ;mov	rdx
+	    push	rcx		; save ecx & edx
+	    ;mov	rcx		; save ecx & edx
+
+	    push qword [rbx]	; value on stack
+	    push rbx		; address of value on stack
+	    mov	rax, rdx
+	    sal	rax, 4		; eax = 4*edx
+	    ; push	rax		; offset from ebp
+	    mov rsi, rax		; offset from ebp
+	    ;push qword stack_line_format
+        mov rdi, qword stack_line_format
+	    ;call printf
+	    add	rsp, 32
+
+	    pop	rcx
+	    pop	rdx
+
+	    sub	rbx, 8
+	    dec	rdx
+	    loop	stack_line_loop
+
+
+
+	; popf
+	; popa
+popAll
+	leave
+	ret 
+
+
+    ; what for?
+    ; was for clearing after printf, now irrelevant
+	; add rsp, 32
+
+
+    ; rbx = & highest qword in stack to display
+	mov	rbx, [rbp]
+    ; (rax = n qwords above ebp)
+    ; (old base pointer)
+    mov rax, [rbp+32]
+    ; eax *= 8
+	shl	rax, 3         
+	add rbx, rax
+
+    println64 rbx
+
+	; rdx = address of qwords to display
+    ; (old base pointer)
+    mov rdx, [rbp+32]
+
+	; rcx = count of qwords to display
+	mov	rcx, rdx
+    ; (old rsi)
+	add	rcx, [rbp+24]
+    ; mov rcx, 1
+	inc	rcx	
+
+println64 rdx
+println64 rcx
+
+    stack_line_loop:
+	    ; push rsi
+	    push rcx
+	    push rdx
+	    push rdi
+
+        ; value on stack
+	    ; push qword [rbx]
+	    mov rcx, [rbx]
+
+        ; address of value on stack
+	    ; push rbx		
+	    mov rdx, rbx
+
+        ; offset from ebp
+		; eax = 4*edx
+	    ;sal	rax, 4
+	    ; push	rax
+	    mov rsi, rax
+		
+	    ;push qword stack_line_format
+        mov rdi, qword stack_line_format
+
+	    ;call printf
+	    ;add	rsp, 32
+	    pop rdi
+	    pop	rdx
+	    pop	rcx
+	    ;pop rsi
+
+	    sub	rbx, 8
+	    dec	rdx
+        ; Decrements rcx != 0
+	    loop stack_line_loop
+

@@ -1,0 +1,55 @@
+= 17 Heap
+Higher level language have an idea called ''heap'. The idea of ''heap' is often, under the idea of ''memory management', spliced to the idea of ''stack'. We have already seen the idea of ''stack' in assembly language. What of ''heap'? 
+
+First, ''heap' is not a good name for this storage. It has that name because once upon a time it was implemented using a ''heap tree'. Some people call it ''free list storage'.  It might also be called ''casual reusable storage'.
+
+''Heap' doesn't exist in assembly language. In higher-level languages ''heap' is used for what is called ''dynamic storage'. Storage which can be allocated and deallocated on the fly, at runtime, by program code. Storage which has no order of use (like the stack), but is used here and there.
+
+The following is a simple description, but may do to bridge the gap, for our purposes.
+
+== The heap model
+The way heap works is that it allocates a biggish storage at the start of runtime. Abstractly, this space has no type or divisions, it is only space. This neutral allocation could be mimiced in machine code with,
+
+?cb
+Section .bss
+    ; 4K = 4000/4
+    heap resq dword 1000 
+?
+
+Allocating storage here or in ''SECTION .data' is the way several, if not all C langauge ''heap' allocations are made, 
+
+?cb
+    int * array = malloc(10 * sizeof(int));
+    if (NULL == array) {
+        fprintf(stderr, "malloc failed\n");
+        return(-1);
+    }
+?
+
+Likely, though not always, ''malloc' will be implemented as a function which allocates from a lump of data in a ''SECTION .data'. Or some similar space which the operating system reserves.
+
+However, the language (C or otherwise) handling this allocation will be using more sophisticated access systems than array indexing. It will choose the reusable space size to suit the size of computer RAM. It will likely divide the free space into chunks, and gather pointers to the chunks into lists.  The GNU C library, for example, has a varying strategy depending on size requested, using a tree to track medium sized allocations. The free-memory manager will track which chunks are in use, and which are not, so they can be reused. Deallocating is by the C command,
+
+?cb.c
+    free
+?
+
+and the C++ command,
+
+?cb.c
+    delete
+?
+
+which means ''finished with this chunk of memory, can use for other purposes'.
+
+What we need to know for assembly language coding is this: this kind of dynamic memory allocation needs a large amount of coding, substancial in any language. This is possible in machine code, but you wouldn't and probably shouldn't be wanting to do it unless a library is pulled in. Moreover, using the abilities of some other language is not usually possible. The language itself needs to use it's own address space. 
+
+If you would like to reallocate memory, one way is to build your own raw version, which reuses chunks of an array or something (you may do naturally if you need to handle larger data). The other, awkward way, is to use another languages eccentric dynamic allocator, one that does not use conventional means (for example, a stack allocator).
+
++.refs
+~ Wikipedia, dynamic allocation,
+: [a{https://en.wikipedia.org/wiki/Memory_management#DYNAMIC}]
+
+~ Wikipedia, C memory allocation,
+: [a{https://en.wikipedia.org/wiki/C_dynamic_memory_allocation}]
++

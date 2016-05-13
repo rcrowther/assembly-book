@@ -1,0 +1,229 @@
+= 1 Introduction
+
+This series of posts is on the writing of assembly language. Halfway through, you'll be on the road with working programs, asking your own questions, developing your own ideas. That's what we want to do.
+
+Assembly language has a terrible reputation for being raw code, and so difficult. To some extent, true. Using assembly language can mean writing five or more times more code than a higher-level language. The lists of instructions are in gnomic words, and interacting with an external environment is tedious and complex. Assembly language is written without safety-nets and or usual means of expression.
+
+That said, assembly language is not half so bad. For one thing, an assembly language compiler is easy to install and run. If you work in Linux, which has the gear in repositories, it will take 5 minutes. No other language, that I can think of off the cuff, is that easy. And the guts of assembly language, the basic actions, are so easy that we cover everything on this page. 
+ 
+Programming in assembly language is discouraged by professional coders. They say that assembly language is not portable, and modern compilers are good at aggressively optimising code. While I can't disagree, I would, mildly, disagree that this means assembly language should not be studied, or even sometimes used. These arguments are against use in commercial contexts. So whatever happened to the spirit of curiosity? Someone needs to know assembly/machine code, or computing becomes a community of specialists---fragile, and easily damaged. There's a flawed philosophy behind the idea that power (of modern computers, say) can overcome lack of efficiency. And the number of modern software languages shows that all languages are not equal---like it or not, one of the arguments for the everyday language you use is either that it is efficient, or that the lack of efficiency is not the first consideration.
+
+However, learning assembly language is not so easy. The tutorials, and other work, found on the web are of very little help. I'm surprised---after all, there's a crew of coders out there who like to be vocal about their worth. Maybe they prefer to snipe at beginners and discuss ''lens' structures and ''aspect-orientated' programming? I guess assembly language is old, and that a lot of material is buried in newsgroups. If there are books available, I wouldn't know---I can't afford them (appendation: the books seem to be a curious bag).
+
+Well, I'm going to take a different approach. This set of posts is for those who are interested in assembly language itself (not to improve their high-level coding). For whatever reason---wishing to read code encountered in sources, wondering if assembly code will do a job, even needing to know for some purpose. So I will not be wading through reams of ''Things this enables me to tell you about number representation systems'. This material is dull, and wastes our time. Mostly, even in assembly language, you need to be thinking about the structure of programs, not number representations. 
+
+A comment I saw someplace on assembly language was, ""You work, work, work, until suddenly you know enough to write a line of code". Which is to say, the environment, where the code lives and acts, is complex. So I steal a trick from Jack Crenshaw's series on compiler design. I give you one way, and point out others. Sure, this will not be the world's greatest assembly code, or even a definitive answer to a small question. But we will have code that works.
+
+To get to working code as fast as possible, I use shortcuts. The largest of these is that I assume a 64-bit computer running Linux. The code is all in 64-bit mode too (maybe a few notes here and there on 32-bit code). There are good reasons. 64-bit in 64-bit mode is substantially different to other code. The web is short on examples. It is often easier to use, but has it's own issues.
+
+As I go along, you'll spot other shortcuts. The largest of these is that I provide a ''rig', sometimes called a ''cradle'. Yup, a ready-built piece of code to start experimenting in. See forward a couple of chapters. Personally, I dislike cradles---not a good advert for a language, are they? But this is machine code, and using a cradle I can show a range of results while keeping the examples clean. Otherwise, we have to belt-up and wander through subjects in an unhelpful order. 
+
+I have also reorganised the usual subject approach. Major language issues are tackled in some sort of interesting order. Mostly, an order where code solves problems. We are looking to assess the language, right? Sample code, is kept as simple as possible (the usual approach for higher-level languages---why not assembly language?). In doing this, I gloss over many details of assembly language coding. But then, I cover areas not covered elsewhere on the web.
+
+I am not at any point trying to suggest that assembly language is simple. It's not. There is a great deal of information to learn, especially about environment complexities. Writing a large program is tedious. I'm hoping I can show the issues. And provide enough code; plain, illustrative, working code, to make your own decisions.
+
+But then, I'm known to be stupid---I need to keep it simple.
+
+
+== About documentation
+Available documentation for assembly code is odd. Very odd. Documentation, notes on the documentation, and references, are in [a{2_documentation.htm}Chapter 2 Documentation].
+
+== About assembly language
+Skip this if you know...
+
+Most of these subjects get talked about in more depth in later posts.
+
+=== What is assembly language?
+It is a mostly one-to-one connection with the machine code of the CPU. In implementation, assembly language compilers offer many facilities to make this connection easier. They offer symbolic labels; which negate the tediousness, unreadable nature, and error-prone practice of numeric leaps. They likely offer macros, to bring some old-school programming activity for creating readable code. They will probably offer shortcut notations for definitions. But they share one basic---they offer direct access to the instructions and registers on the CPU.
+
+=== Language Case
+Assembly language is usually case-insignificant. Originally, it was written in upper case, as was the coding practice back in the nineteen-sixties. Modern assembly language tends to use lower-case. Nowadays, case does not matter.
+
+
+=== Bit sizes
+Assembly language uses some old/low-level computing word for bit sizes. This can be frustrating. Hold onto this---whatever history you read, information you get given, or uses you know elsewhere, the words refer to fixed bit sizes. In NASM,
+
++dd
+~ BYTE
+: 8-bit
+~ WORD
+: (following Microsoft fix) 16-bit
+~ DWORD
+: double natural size, 32-bit
+~ QWORD
+: quad natural size, 64-bit
++
+
+It helps to learn these. Or, at least, the one for the bit size of your own computer.
+
+=== Memory
+Memory works as if the memory is one big array with indexes. Assembly language tends to cover this up by adding labels, then you call the labels. The space can be allocated with no data, or can be initialised with data. This is not working code but, I hope, you get the drift,
+
+?cb
+; unallocated, size 1
+treesN: resq 1
+
+; allocated, with integer 5
+oakN: dq 5
+
+; after an instruction is called, the label returns it's value,
+; which is '5'
+ <some instruction like 'move to'> oakN
+?
+
+=== Registers and instructions
+The heart of assembly language is a set of ''registers', where most manipulation happens. 
+
+Data is moved to a register then ''instructions' (sometimes called ''operations' or ''commands') such as ''add' or ''subtract' are performed. Some instructions can take data from from memory, most notably ''mov'/''MOV' (''move') commands. These get data to-and-from memory into registers, where arithmetic and logic can be performed.
+
+
+To add two numbers,
+
+++
+@ Get a number from memory, usually into a register
+@ Issue the instruction to add two numbers, usually between the register and another place in memory (or the assembly language may allow direct statement of a constant)---the result goes into the register
+@ Optionally move the result into memory, or perform further operations.
++
+
+In the assembly code we will be using, assuming the register is called 'EAX' (we'll be dropping those upper-case letters soon),
+
+?cb
+MOV EAX 67
+ADD EAX 87
+?
+
+the result, ''154', is in register ''EAX'.
+
+==== Available registers
+There's only a few registers. On early x86 CPUs there are about nine.
+ 
+Originally, each register had a special purpose. They are more general now, but some instructions only work, or work faster, on one register. And some registers are still for a defined purpose---notably, SP and BP. Here are the original eight general-purpose registers, with their 8-bit(!) names,
+
++dd.hz
+   ~ AX
+: multiply/divide, string load & store, accumulator
+   ~ CX
+: count for string operations & shifts, counter
+   ~ DX
+: port address for IN and OUT, extend precision, data storage
+   ~ BX
+: index register for MOVe, base index (for use with arrays). Originally for offsetting memory.
+   ~ SP
+: points to top of stack
+   ~ BP 
+: points to base of stack frame
+   ~ SI 
+: points to a source in stream operations, source index for strings
+   ~ DI 
+: points to a destination in stream operations, destination index for strings
++
+
+Occasionally, especially in reference documentation, you will see mention of the ''(x)IP' register. This is the ''Instruction Pointer' register, i.e. it contains the address of the next instruction. This can't be manipulated directly by software, it is changed by issuing instructions which have the side effect of changing it (e.g. ''jmp'/''JMP'). You won't use it.
+
+As the bit size of the Intel x86 chips (and the AMD chips which became increasingly important and use much the same instruction set) rose, the registers needed more bits. So the registers for 32-bit were called,
+
+++
+   @ EAX
+   @ ECX
+   @ EDX
+   @ EBX
+   @ ESP
+   @ EBP
+   @ ESI
+   @ EDI
++
+
+64-bit computers, if truly working as 64-bit and not emulating, have eight additional 64-bit general registers (R8--R15). The general registers are now called,
+
+
+
+++
+   @ RAX
+   @ RCX
+   @ RDX
+   @ RBX
+   @ RSP
+   @ RBP
+   @ RSI
+   @ RDI
++
+
+An important point is that, both for backwards compatibility, and because some kinds of operation only need small numbers of bits, the original smaller registers can still be called on wider bit-size CPUs.
+
+However, they are not separate registers. When a smaller register is called, it is the same register as the new wider one. The smaller register uses part of the new wider one. So, on a 64-bit machine, you usually call ''RCX'. If you only need 8-bits, you can call ''CX'. All ''CX' does is use the bottom 8 bits of ''RCX'.
+
+Which leads to this diagram, of which you will find variations all over the web,
+
+*{registers.jpg}
+
+This is important because if you are using a wide modern register, say EAX (let's drop the quotes), and you save to the old AX register, you are really only changing the low end of the RAX register. If you had anything stored in the RAX register, you will damage it.
+
+Ok, there's a first example of how assembly language simplicity can cause trips and has ''things that need to be remembered'. Though I think, once they have seen and understood the diagram, few people go wrong with this.
+  
+Finally, CPUs with fancy extensions, such as MMX, 3DNow!, and SSE have have special purpose registers for floating-point arithmetic, graphics manipulation, etc. For now, we'll ignore these extra registers.
+
+
+=== The stack
+Ah, if registers are the heart of assembly language coding, the stack is probably the lungs.
+
+The stack takes numbers at the bit width of the CPU; so 8-bit for 8-bit CPUs, 16-bit for 16-bit CPUs, etc. The stack is the same structure as you will find in higher level languages---a pile of data you can ''push' numbers to and ''pop' them off. Last-In First-Out definition. Non-working code snippet,
+
+?cb
+    ; push '67' to the stack
+    push 67
+
+    ; pop a number off (returns '67')
+    pop 
+?
+
+The stack is central to CPU operation. It allows a near endless set of numbers to be pushed away for later retrieval (whereas, register space will run out fast, and memory will get messy quickly). To high-level coders, a single stack may seem limited. But consider that some high-level languages (such as ''Shakespeare' and ''Postscript') are based in stacks.
+
+Because the stack is the only builtin collection (unless you include the memory array itself), many programming tricks are performed on the stack. Later, we'll be talking more about it.
+
+==== The CPU stack works downwards
+This is important to remember. The CPU stack works by fixing it's base pointer at some address, and giving the stack a fixed amount of room from zero,
+
+*{stack.jpg}
+
+As items are pushed, the stack pointer moves down towards zero. This is backwards from expectation---in higher-level languages, you would think of a stack growing forward/upward across memory. But this is assembly code. The stack has a fixed size, and decrements. When an item is pushed, the stack address goes down, not up. And when an element is popped, the address goes up, not down.
+
+This is doubly important to remember because, in assembly code, the stack top and bottom (registers ''RSP' and ''RBP') are pointers. Often you will need to run down the stack to return, say, the ''4th element from the top'. Because the stack moves towards zero, to get previously ''push'ed elements, the stack pointer must have an offset value added (not subtracted). And, to make some space at the top of the stack, an offset must be subtracted (not added),
+
+Unfortunately, the conventional description of a stack as having a ''top' (meaning the active place for the next pop/push) is now upside down. The active address for pop/push is the ''lowest' address.
+
+
+==== Stack registers
+We mentioned some registers are special.
+
++dd
+~ xBP
+: points to base of the stack.
+
+~ xSP
+: points to the top of the stack.
++
+
+==== Stack usage
+The stack is central to many assembly language conventions, so it holds many types of data. It may hold addresses to jump to, and variables held temporarily. The situation gets worse. Most CPUs (including the x86 range) have a very basic ability to define a sub-program (a function or procedure). The stack is used to store parameters and returns.
+
+Arguably, these are separate concerns. In a higher-level language, using one collection for many purposes is regarded as not encapsulated, and avoided because it is error-prone. But x86 CPUs provide only one stack, so there's no way round this. You'll have to get used to programming code to make sure these purposes do not get muddled. Later, we'll discuss a common way to get round this, the stack frame.
+
+And, unless you really mean you want to tamper with the stack, stay away from the (x)BP and (x)SP registers.
+
+
+==== Stack errors
+At the end of a piece of code, the stack should be balanced i.e. free of data. If it is unbalanced the return will be unhelpful and uninformative,
+
+?cb.result
+Segmentation fault
+? 
+
+Go further in assembly code, and you'll see a lot of that.
+
+== Finale
+Right, that's it, the basics. Let's get get going.
+
+
+
+
+

@@ -1,0 +1,273 @@
+= 10 Floating point numerics (and a glance at matrix arithmetic)
+This far, we have a working rig, introduced numbers, and talked about how they are saved. In most high-level languages, we could sum up the progress as,
+
+?cb
+    var = 66
+?
+
+Not much? However, and this seems to be why university courses teach assembly language, we've covered subjects not usually breached this early in coding. We've covered how programs are assembled physically---limiting the talk to ELF files, but we did. We talked about calling other languages from the code---an appendix in most programming books. We've glanced at what high-level languages call ''immutable data'--- ''SECTION .rodata'. And data addresses/references.
+
+Keeping the discussion to small chunks of data that walk us down useful roads, let's tackle floating-point data. Floating point data is a large chunk of basic numeric data which we are missing. But we have other interests.
+
+Floating-point data is often used round sound and graphics applications. The height (volume) of a sound wave can be reduced, and a simple echo, can be programmed by integers. But, soon as you want a special effect like compression, you may well need floating point arithmetic. The human ear is far too sensitive to stand for approximations that throw in wild results---indeed, a wild number in a sound stream can blow your speakers. As for graphics, the human eye is sensitive to the effects. Sure, a blur can be programmed with a simple fuzz between adjacent pixels, but for a more flexible and subtle ''unsharpen' effect, you'll need floating point data and arithmetic.
+
+Sound data often has a constraint it must work in real time. On an old computer I owned, I calculated live sound had about 60 clock cycles to add effects. Easy enough to add a volume control and some input switching, enough for a equaliser, but running short for other effects. Unless you're coding a game, graphics do'nt have to work in real time, but have the problem of huge information. So this is where conventional coding lore is shoved aside, and a coder may want to crunch-optimise the critical code. And the coder may start thinking about assembly language, so every single clock cycle is working to the max.
+
+Ignoring every other tutorial on assembly language, lets look at basic handling of floating-point data.
+
+== Assignments
+NASM makes this easy. If the number has a full-stop (''period') in it, then it is floating point,
+
+?cb
+SECTION .rodata
+    a = 6.7
+    b equ 6.7
+
+SECTION .bss
+    dc: resq 1
+?
+
+The sections have their usual meanings---which are irrelevant to data type---and unallocated references in the ''.bss' section can carry floating point if required.
+
+== Arithmetic
+Can you do any arithmetic on these assignments? No you can't. Not conventionally. Yes you can, technically. Errm, we need some more information.
+
+Floating-point numbers need a special representation. We need to know where the period is. There is a deal of theory about this---do we work to fixed or arbitary precision? Which we will not consider here (by default, computers work to arbitary precision).
+
+This special representation will fit into a plain chunk of allocated space. But we can't add the number to another number using a conventional ''add' instruction. The representations are different, the CPU instructions are too simple to know this (no notion of type), so the result will be crap.
+ 
+In the original 8086 CPU, that was it. To make floating point numbers, a representation had to be chosen, then software arithmetic instructions coded to handle the resulting data. Pretty rapidly, maths co-processors were added, with their own registers and instruction sets, especially devised for floating point arithmetic (yes,  that was the basis. The presence of floating-points types then opened up the possibility for trigonometry instructions, fast ''root of x' instructions, etc.). By the time of Pentium processors, all this extra floating-point maths gear was included in a standard CPU chip.
+
+In these posts we will skip representations of floating point numbers and software emulation. Let's assume we will use the FPU---it's been there in some form since the beginning.
+
+
+== Floating point co-processing
+8087, The first Intel maths co-processor. At the time, an exclusive item. From the time of the Pentium, maths coprocessors were built-in. At the time of the 486, the maths processor was integrated into the CPU, which has been the case since. Fortunately, the instruction set has only changed minimally.
+
+The registers are 80 bits wide (yes, eighty bits!). 
+
+They are organised in an eight deep stack ''st0' to ''st7'. So the stack must be manipulated to get at them. The stack is computationally efficient and algorithmically logical, but has proved a hassle, and newer FPUs can address the eight registers directly.
+
+
+== Loading the registers
+Getting data into the FPU is easy enough,
+
+?cd
+    fld x
+?
+
+Puts a number in the first register (FTP register stack ''top').
+
+
+=== Quick guide to the instructions in the Floating Point Unit
+The instructions have been extended, but not by many (and the extensions tend to be for housekeeping).
+
+
+Some instructions load preset constants, like ''fldpi' (''math Pi') and ''fldg2' (log2(10)), and ''fldz' (load ''0')
+
+Arithmetic is not so bad; ''F(x)' variants (''fadd', ''fmul' etc.) on the usual integer set. Some variations of these take two FPU registers, then pop the fist register. This lets you add (for example, but could be divide, etc.) the first two numbers in the stack, then the result is on the stack top. 
+
+Some instructions returning fundamental math results are also included, ''fsin' (math ''sin', only in later FPUs), ''fptan' (math ''partial tangent'), ''fsqrt' (math ''square root'), ''fabs' (absolute value), ''frndint' (math ''round' to integer) etc.
+
+Several instructions save and load the register set, or parts of it. 
+
+
+
+
+=== Conditions
+Floating point units have a comparison instruction, but how do you do something with the comparison? There are no duplicated ''fjmp' instructions. What you need to know is that you transfer the comparison results out of the FTP via some special instructions. Once in the standard flags register, the comparison can be used to affect code flow.
+
+''fstsw' is an FTU speciality which gets the status word into the main register ''ax' or some other 16-bit memory. It's the way to influence normal code by floating point conditions. ''sahf' is a core instruction to store AH into FLAGS (we are not too interested in flags in these posts, as they mostly work for comparisons, which mostly works, but you need to know this command at this point). So, here we go, example code,
+
+?cb
+SECTION .data
+    ...
+    d: dq 5.5
+    e: dq 1.5
+    tot: dq 7.0
+
+main:
+    ...
+    fldz
+    fld qword [d]
+    fadd qword [e]
+    fcom qword [tot]
+    fstsw ax
+    sahf
+    jna else1
+        printlnStr falseMsg
+        jmp forward1
+    else1:
+        printlnStr trueMsg
+    forward1:
+    ...
+?
+
+Ok, if that worked, we got conditional execution depending on a floating-point comparison result.
+
+
+
+=== Floating point numbers and sloppy comparisons
+A tiny deal on floats and number theory. Float representations of fractional numbers are often infinitely long. But floats on a computer are of restricted length (even if now 64-bit). Therefore, float representations on a computer are very often approximate. For that reason, do not try to compare float arithmetic results to zero (or accurately to another number, either). Often, a truncation error will mean the comparison will never match.
+
+When we did the first floating point examples, I ignored this, and used constants to keep the examples clean. But the examples never tested the results of arithmetic (which will almost always result in rounded results).
+
+To compare a floating point value to zero, compare to a very small number (""As far as we are concerned, 0.001 is zero"). The usual way is to use the instruction ''fabs', which removes the sign (AMD Documentation ''fabs' = latency 2). To compare to zero, ''fabs(x) < EPS', 
+
+?codeblock
+
+SECTION .data
+    ...
+    ; Set to 1×10^−10
+    aSmallNumberAppropriateToPrecsion equ 0.00000000001
+
+main:
+    ...
+    fabs 
+    fcom aSmallNumberAppropriateToPrecsion
+    ...
+?
+
+To compare floating-point numbers which may have accumulated errors, use a solution like ''fabs(x − y)/fabs(y) < EPS',
+
+//??test!
+?codeblock
+SECTION .bss
+    ...
+    tmpF: resq 1
+
+SECTION .data
+    ...
+    ; Set to 1×10^−10
+    aSmallNumberAppropriateToPrecsion equ 0.00000000001
+    x: dq 6.7
+    y: dq 6.7000000004
+
+main:
+    ...
+    fld y
+    fabs
+    fstp tmpF
+    fld x
+    fsub y
+    fabs
+    fdiv tmpF
+    fcom aSmallNumberAppropriateToPrecsion
+    ...
+?
+The division is expensive, and can be removed if precision accuracy is not required (''fabs(x − y) < EPS')
+
+
+
+And if you do this a lot, you may get to wanting macros for the tests.
+
+
+== Retrieving data from the FTP
+Mostly you will work with floating point data within the FTP resisters themselves. Retrieving data implies a coercing results to integer, which has a place. We'll cover that later (much later). 
+
+
+== Floating point C interfacing
+It will not take too long with floating points before you may wish to transfer floating point data to and from C functions, if only to print out. But to do that, we need to make a deviation, and talk briefly about...
+
+=== MMX/3D-Now!/SSE
+You can go away and read all about them on [a{https://en.wikipedia.org/wiki/X86#64-bit}Wikipedia-x68]
+
+Quickly,
+
+==== MMX
+MMX arrived in the Pentium, MMX added eight registers, MM0 through MM7. These were aliases for the Floating point registers, but they handled 64-bit integers and are not addressed like a stack. Also, they formalised the idea that each register could be handled in part (so a register could be 8-bit parts). In literature, this is called a ''packed data type'.
+
+The idea was to have better multiple operations for graphics, but reputedly it did not catch on, because already graphics were shunted out to special chips. Reputedly, it did find some use in sound processing, because it has special numeric clamping instructions. Then...
+
+==== 3D-Now!
+AMD took the next step and did the same thing, overlaying the core registers, but with floating point types, and with the ability to perform arithmetic in two parts of the same register. This caused some interest, as the instruction set was evidently faster on heavy-processed floating-point arithmetic. However, 3D-Now! still got lost in the mix.
+ 
+==== SSE/SSE2
+Appeared in Pentium III and Athlon XP. Sets eight 128-bit registers, named XMM0 through XMM7 (at least, several AMD processors have more) These registers are separate, not aliased to FPU registers (though early versions switched CPU power).
+
+SSE still did not take off as a general idea. but did become used in scientific software, which I suppose could project complex ideas on to the heavy block of registers (i.e matrix arithmetic).
+
+
+
+== Floating point C interfacing 2
+Remind me again, why are we bothered?
+
+Well first, because if you are interested in assembly langauge for sound or graphics, you may have an interest in these efficint parallel/matrix algebraic instructions. It's enough to note they exist.
+ 
+And second, because the SSE registers, especially ''xmm0', are how the C convention passes floating point parameters on 64-bit architectures.
+
+There are two things you need to know. First, that we use the SSE(2) registers to pass the parameters (now those registers, aster 3D-Now! are floating point). Second, that integer and floating-point parameters must be passed in the same register index register as in the instruction. That means, for,
+
+?cb.c
+x(float, float, integer, float)
+?
+
+you do not pass,
+
+??
+integer1 rdi
+
+float1 xx0
+float2 xx1
+float3 xx2
+?
+
+you pass,
+
+??
+integer1 rdx
+
+float1 xmm0
+float2 xmm1
+float3 xmm3
+?
+ 
+another way to look at this is that the parameters are passed, left to right, depending on their type---integer or float,
+
+??
+param1 rdi|xmm0 
+param2 rsi|xmm1
+param3 rdx|xmm2
+param3 rcx|xmm3
+...
+?
+
+This seems awkward, but makes a lot of sense for underlying code. Why should the underlying code have to keep track of the parameter index? Much faster and more robust to know parameter index ''x' is needed, then use the existing type information to table-jump to the register needed.
+
+We already have some example (very simple) function calls. They are the ''printFloat' and ''printlnFloat' utilities we added to the rig. Here they are, without macro fluff, presented as main body code (so dropping the register pushing and popping),
+
+?cb
+SECTION .rodata
+    printFloatFmt: db "%g", 0
+    printlnFloatFmt: db "%g", 10, 0
+
+    spacer: db " : ", 0h
+    a: dq 7.9
+    b: dq 8.7
+
+
+
+SECTION .text
+global main
+main:
+    push rbp
+
+    movq xmm0, [a]
+    mov rdi, printFloatFmt
+    call printf
+
+    printStr spacer
+
+    movq xmm0, [b]
+    mov rdi, printlnFloatFmt
+    call printf
+
+    pop rbp
+    mov rax,0
+    ret
+?
+
+The ''movq' used to load is a little more intuitive than the macro's ''movss', as it deals with the data direct, not through parameters?
+
+C functions called with float parameters. I can see possibilities...
+

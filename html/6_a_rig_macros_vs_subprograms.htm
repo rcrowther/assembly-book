@@ -1,0 +1,215 @@
+<!DOCTYPE html><html><head><title>6_a_rig_macros_vs_subprograms</title><meta http-equiv="content-type" content="text/html; charset=UTF-8" /><link rel="stylesheet" type="text/css" media="screen" href="../lib/doc.css"/></head><body><article><h1>6 A rig, and macros vs. sub‐programs</h1><p>Now we develop the rig used in the following posts. Not all of the code is explained here, but will be, over coming posts.</p><p>The code also allows us to discuss the principle of Don’t Repeat Yourself.</p><h2>How to DRY, Don’t Repeat Yourself</h2><p>The code in the previous post printed a string, but only once. In programming, we will want to print strings repeatedly. And values. Printing any form of data is a way of debugging. The method is verbose and slow—a program needs to be recompiled, and as strategy is an unstructured response. But, finally, the method will solve any problem.</p><p>If we are likely to use print code a lot, it needs to be nice and non‐interfering. We need to be able to write instructions easily. The code should avoid disturbing surrounding code.</p><p>This falls under the idea Don’t Repeat Yourself. This idea was elevated to a principle by users of the programming language Ruby. Ruby is a fabulously high‐level language. It includes many programming structures to help programmers stick to the principle. Still, principles are principles, and the idea is the same in assembly code.</p><p>Assembly language allows not one but two solutions to creating named entities which collect code. These are macros and sub‐programs. Note that, in other languages, sub‐programs may be called ’functions‘ or ‘procedures’—so you may know more about this than you suspected.</p><p>I have a problem here—I promised not to talk about macros too much. But I think I’m ok if I talk about them, while not packing the code with them. Macros are a way of templating a snippet or block of code. Code is written and give some sort of a label, introduced by an ‘%’ e.g. (code snippet)</p><pre><code>SECTION .data
+    %define BitSize: 64</code></pre><p>then wherever the compiler sees the label, it substitutes the code. So,</p><pre><code>SECTION .text
+    mul eax, BitSize</code></pre><p>is converted by the compiler to,</p><pre><code>SECTION .text
+    mul eax, 64</code></pre><p>As an alternative, a sub‐program is not part of the compiler, it is a section of code named in the program itself,</p><pre><code>SECTION .data
+    MultiplyEAXByBitsize:
+       mul eax, 64
+
+SECTION .text
+    call MultiplyEAXByBitsize</code></pre><p>I guess this much may be known to most readers, but I put it here anyhow.</p><p>The point is, in assembly language these two approaches are alternatives. Users of the C programming language will know of the C preprocessor—a macro system very like that used in NASM. However, C code is vastly more expressive than the macros, and the calls to sub‐programs very much so. In C programming, the pre‐processor is limited, and deliberately so. I’ve seen some extensive and complex C macros but, on the whole, the pre‐processor is only for establishing universal constants (usually adapting C programs to the environment e.g. changing the code between 32 and 64 bits).</p><p>In NASM, the macro system is extended from C. The macros can be context‐aware, that is, they are capable of local variables. This is a very significant idea. You see, assembly programs are much simpler than C programs, and sub‐program calls very much so. With the basic system so simple, if macros can be extended by local variables, then macros are a near‐universal replacement for sub‐program calls. An alternative approach to the same need.</p><h2>Pros and cons of macros vs. sub‐program calls</h2><p>Macros,</p><ul><li>Super fast. The code is worked through (‘expanded’) by the compiler, then inlined. No cost at all.</li><li>Will bulk code if repeated a lot, maybe causing memory paging (thus slow).</li><li>Are invisible when small (e.g. a special constant), but become difficult to write and read at length.</li><li>Become awkward when handling parameters (NASM macros are not a LISP, that’s for sure)</li><li>Are odd about returns, with no convention.</li></ul><p>Sub‐programs,</p><ul><li>Very fast. A local jump costs (AMD documentation) latency 1. Adding in the return jump, latency 2. Compared to any other action, not expensive.</li><li>In larger memory situations, likely to be handled more fluidly.</li><li>Are easy to read, in a way encouraged by high‐level coding.</li><li>Have consistent parameter handling (but difficult to write, as we will see in later posts)</li><li>Have conventions for return values.</li></ul><h2>The limitations of ‘printf’</h2><p>After that, there is an issue here I do not want to put up with. Personally, I am no fan of ‘printf’—it’s unnecessarily intricate for what is often a simple job of “show me some results”. And it’s not polymorphic, meaning it will not print ‘anything’, but hassles me about what it is it is printing.</p><p>Starting with the polymorphism, there is no solution. Assembly code has no abstract notion of ‘type’. The idea of type is an advantage of higher‐level language, which can read the type then produce lower‐level constructs (no need for ornate language like “dynamic dispatch” here, it’s enough to know you can not know what the data is). So that can not be done.</p><p>Worse, neither can can assembly language (easily) create what I would really want for a test rig, a string buffer. A string buffer suggests dynamic memory allocation. That would need a lot of work with the C library, or some off‐the‐edge discussion about defining memory blocks and offsets.</p><p>However, the situation can be improved. First, we only need printing to Standard Out. Good, we can use the streaming nature of an operating system’s stdout to build output. And we can at least make the code look ok.</p><h2>The rig</h2><p>The rig is written in macros. First, the other tutorial on assembly code, by Paul Carter, writes print code as sub‐programs—so you can go compare. Another reason is vaguely philosophical—this code is largely self‐complete, will be heavily reused and often temporary. That suits macros, not sub‐programs.</p><p>To help avoid errors, presented complete, with some brief examples in the ‘.text’ section,</p><pre><code>BITS 64
+
+
+
+; Pushes the general registers to the stack. 
+; 
+; Will ensure code bracketed with the complementary 'popAll' has registers
+; restored. Will not restore stack imbalances.
+;
+; Will not guarantee preservation of supplementary (r8-r15) or special
+; registers.
+%macro  pushAll 0
+    mov r8, rsp
+    push rax
+    push rcx
+    push rdx
+    push rbx
+    push r8
+    push rbp
+    push rsi
+    push rdi
+%endmacro
+
+; Pops the general registers from the stack. 
+; 
+; Will ensure code bracketed with the complementary 'pushAll' has registers
+; restored. Will not restore stack imbalances.
+;
+; Will not guarantee preservation of supplementary (r8-r15) or special
+; registers. 
+%macro  popAll 0
+    pop rdi
+    pop rsi
+    pop rbp
+    add rsp, 8
+    pop rbx
+    pop rdx
+    pop rcx
+    pop rax
+%endmacro
+
+
+extern printf
+
+; Prints an integer.
+;
+; WARNNG: Appears to print calculated addresses, but will print the address,
+; not the contents. MOV to a register to print the contents of a calculated
+;address.
+;
+; @param 1 a printf format string
+; @param 2 an integer value
+%macro  printInt 2
+    pushAll
+    mov rsi, %2
+    mov rdi, %1
+    call printf
+    popAll
+%endmacro
+
+; Prints a float.
+;
+; WARNNG: Appears to print calculated addresses, but will print the address,
+; not the contents. MOV to a register to print the contents of a calculated
+;address.
+;
+; @param 1 a printf format string
+; @param 2 a float value
+%macro  printFloat 2
+    pushAll
+    movsd xmm0, %2
+    mov rdi, %1
+    call printf
+    popAll
+%endmacro
+
+
+; Prints a char.
+; @param 1 char
+%macro  printChar 1
+    printInt printCharFmt, %1
+%endmacro
+
+
+; Prints a string.
+; @param 1 a string
+%macro  printStr 1
+    printInt printStrFmt, %1
+%endmacro
+
+
+; Prints a 32-bit int.
+; @param 1 int
+%macro  print32 1
+    printInt print32Fmt, %1
+%endmacro
+
+; Prints a 64-bit int.
+; @param 1 int
+%macro  print64 1
+    printInt println64Fmt, %1
+%endmacro
+
+; Prints a float.
+; @param 1 a float
+%macro  printFloat 1
+    printFloat printFloatFmt, %1
+%endmacro
+
+
+
+; Prints a char.
+; @param 1 char
+%macro  printlnChar 1
+    printInt printlnCharFmt, %1
+%endmacro
+
+
+; Prints a string.
+; @param 1 a string
+%macro  printlnStr 1
+    printInt printlnStrFmt, %1
+%endmacro
+
+
+; Prints a 32-bit int.
+; @param 1 int
+%macro  println32 1
+    printInt println32Fmt, %1
+%endmacro
+
+; Prints a 64-bit int.
+; @param 1 int
+%macro  println64 1
+    printInt println64Fmt, %1
+%endmacro
+
+; Prints a float.
+; @param 1 a float
+%macro  printlnFloat 1
+    printFloat printlnFloatFmt, %1
+%endmacro
+
+
+; Prints a colon for label value.
+;
+%define  printIs printStr isStr
+
+
+
+; Appends a null char to a string.
+;
+; @param s a string
+%define cString(s) s, 0
+
+%macro  frame 1
+    push rbp     
+    mov rbp, rsp 
+    sub rsp, %1
+%endmacro
+
+%macro  frame 0
+    push rbp     
+    mov rbp, rsp
+%endmacro
+
+%macro  unFrame 0
+    mov rsp, rbp
+    pop rbp
+%endmacro
+
+%define frameIdx(i) [rbp + 4*(i)]
+
+
+SECTION .rodata
+    printCharFmt: db "%c", 0
+    printStrFmt: db "%s", 0
+    print32Fmt: db "%li", 0
+    print64Fmt: db "%lli", 0
+    printFloatFmt: db "%g", 0
+    printlnCharFmt: db "%c", 10, 0
+    printlnStrFmt: db "%s", 10, 0
+    println32Fmt: db "%li", 10, 0
+    println64Fmt: db "%lli", 10, 0
+    printlnFloatFmt: db "%g", 10, 0
+    isStr: db ": ", 0h
+
+SECTION .data
+    ackStr: db 'Aye', 0h
+
+
+
+SECTION .text
+
+global main
+main:
+    frame
+
+    printStr ackStr
+    printlnChar '.'
+
+    mov rax, 36
+    println64 rax
+
+    unFrame
+    mov rax,0	
+    ret</code></pre><p>The print macros handle buffers, registers, and parameters. They can print out a character as a letter—try it. That’s what we need, informative reporting.</p><p>Those interested in macros may note that this code shows macros calling macros. It also shows that NASM macos have a crude kind of polymorphism—different macros can have the same name if the number of parameters differ.</p><h2>Done</h2><p>I’m not going to show the macros again, they spoil the listings. From here out, code should be pasted into the various SECTIONs in the rig.</p><p>I’ve also not explained much about the code. All will be explained later. But at least you know why it is written in macros, and that there is an alternative (sub‐programs).</p><p>I recommend skipping the details. Treat it as a rig, and let’s get on.</p></article></body></html>

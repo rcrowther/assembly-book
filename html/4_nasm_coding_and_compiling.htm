@@ -1,0 +1,43 @@
+<!DOCTYPE html><html><head><title>4_nasm_coding_and_compiling</title><meta http-equiv="content-type" content="text/html; charset=UTF-8" /><link rel="stylesheet" type="text/css" media="screen" href="../lib/doc.css"/></head><body><article><h1>3 NASM coding and compiling</h1><p>Ok, I know you’re all ready to go, but we needed the previous sections to cover the groundwork. End of this one, we’ll have the first code.</p><p>I warn you now, it won’t do anything, but it will be compiling and executing.</p><h2>The Assembly Language of NASM</h2><h3>Sections</h3><p>As we saw in the previous post, ELF output files have ‘sections’. These are defined in NASM by label‐like commands,</p><dd><dd>SECTION .text</dd><dt>contains the instructions that is executed. The only section that can be executed. Treated as read‐only data once the program is run.</dt><dd>SECTION .data</dd><dt>contains initialised data. It cannot be executed, but may be read from and written to when the program is run. Contains ‘dx’ type pseudo‐instructions.</dt><dd>SECTION .bss</dd><dt>contains uninitialised data. It cannot be executed, but may be read from and written to when the program is run. Contains resx pseudo‐instructions.</dt><dd>SECTION .rodata</dd><dt>contains initialised read‐only data. It may not be written to. Contains ‘dx’ type pseudo‐instructions.</dt></dd><h3>Spacing and layout</h3><p>NASM is generous in it’s handling of layout.</p><p>Space anywhere is skipped, empty lines are skipped, comments can end lines or be alone on a line, non‐code statements can be in several orders, tabs or spaces are both acceptable.</p><p>Those of you who use text‐based macro languages, or the legendary GNU ‘make’ tool, will be glad to hear this.</p><h3>Macros</h3><p>NASM has a system for generating repetitive code, macros. As well as defining new and repeated material, macros can rename existing material (often to more sensible names).</p><p>If you have not used a macro system before, then I have a problem. Macro systems are fundamentally different to the usual forms of computer coding. They are very powerful, fast to compile, and a pain in the neck to use. Macro definitions get hairy very quickly. In these posts, I can’t really cover how to code macros.</p><p>So what I am going to do is this. I will tell you that macros mainly allow a coder to ‘template’ repeatedly used material. This can save a lot of coding. However, knowing about macros is not important to learning the guts of assembly language. I tell you how to recognise them, then you can skim them if you see them. Come back if you need to.</p><p>Macros and macro material are introduced with the ‘%’ symbol e.g.</p><pre><code>%define myNameString() "Robert Crowther"  </code></pre><p>Now you see them. Moreover, I will always put macro definitions at the end of a post, so you can idly glance, or ignore them. Ok?</p><p>If you’ve used macros before—NASM macros are reputedly fairly standard for an assembly language compiler. The NASM Reference Manual suggests they are not unlike TASM or MASM macros. In common terms, NASM macros are similar to the C pre‐processing system, but have a powerful (nestable) addition called ‘context’.</p><h2>Write a program</h2><p>Make a file called ‘hw.asm’, containing the following. For this first code, I will detail the 32‐bit variant,</p><h5>x86 32‐bit</h5><pre><code>;
+; This program runs in 32-bit protected mode.
+;  build: nasm -f elf -F stabs hw.asm
+;  link:  ld -o hw hw.o
+;  run: ./hw
+;
+
+SECTION .data
+
+SECTION .bss
+
+SECTION .text
+
+global main
+main:
+   ret</code></pre><h5>x86 64‐bit</h5><pre><code>;
+; This program runs in 64-bit mode.
+;  build: nasm -f elf64 -F stabs hw.asm
+;  link:  gcc -o hw hw.o
+;  run: ./hw
+;
+BITS 64
+
+
+SECTION .data
+
+SECTION .bss
+
+SECTION .text
+
+global main
+main:
+
+   mov rax,0
+   ret</code></pre><h5>Notes</h5><p>The 64‐bit version uses,</p><ul><li>‘BITS 64’ to enforce fulll 64‐bit operation</li><li>64‐bit registers (e.g. ‘rax’ instead of ‘eax’, ‘rbx’ instead of ‘ebx’, etc.)</li><li>‘‐f elf64’, not ‘‐f elf ’, in the build command</li><li>a full ‘gcc’ compiler command when linking</li></ul><p>In the 64‐bit version, ‘BITS 64’ is usually not needed, as NASM guesses the bit‐size from the output format selected. However, including the statement may may cover some more advanced behaviour.</p><p>‘global’ says the following name/symbol is an entry point. The name/symbol will be visible to code looking at the compiled file. This ‘global’ statement is followed by a label name, ‘main’. Usually, this name can be anything, it is a definition.</p><p>However, for our purposes, this particular ‘global’ statement must define a label named ‘main’. We are going to use GCC to link files together, so GCC needs to see a C programming‐like entry point. In C that entry point is called ‘main’. Call the label anything else, and the code may compile, but will not run/execute.</p><h2>Compile and link the program</h2><p>Use the program NASM,</p><h4>NASM command format</h4><p>This is all you need to know about the program ‘nasm’ (there’s more, of course, but you do not need it),</p><pre><code>Usage: nasm -f <output format> -F <debug format> files...</code></pre><dl><dd>‐f</dd><dt>output format</dt><dd>‐l</dd><dt>create a file detailing the compilation into machine code</dt><dd>‐F</dd><dt>debugging format</dt></dl><p>Note: NASM documentation,</p><blockquote><pre>valid debug formats for 'elf64' output format are ('*' denotes default):
+    dwarf     ELF64 (x86-64) dwarf debug format for Linux/Unix
+  * stabs     ELF64 (x86-64) stabs debug format for Linux/Unix</pre></blockquote><p>Right, from the commandline, pick the type of your computer (sorry, ‘architecture’), and,</p><h5>x86 32‐bit</h5><pre><code>> nasm -f elf -F stabs hw.asm
+> ld -o hw hw.o</code></pre><p>or,</p><h5>x86 64‐bit</h5><pre><code>> nasm -f elf64 -F stabs hw.asm
+> gcc -o hw hw.o</code></pre><p>Note how a full ’gcc’ statement is required for 64‐bit.</p><h2>Run the program</h2><p>By now, wherever you are editing on the computer, you have three files; ‘hw.asm’ is the code we are editing, ‘hw.o’ contains the compiled object output (now an ELF file containing binary code), and ‘hw’ is an executable ELF file (which has been linked with any external code we are using—at the moment, none).</p><p>Result! Run ‘hw’,</p><pre><code>> ./hw</code></pre><p>Nothing happens.</p><p>But at least it did not fail (well, if you got this far, I guess not). And it compiled super‐fast, and is very small.</p><h3>Looking at NASM output</h3><p>Sometimes interesting, add the ‐l option,</p><pre><code>> nasm -f elf64 -l log.lst -F stabs hw.asm</code></pre><p>This writes a file ‘log.lst’ to the same location where the file was run. The file contains the source code, annotated with the numeric codes generated. This is interesting, though not, for many, of much use.</p><p>The file also includes information on how macros were expanded, showing the macros in place. For a quick confirmation macros are working the way you wish, this can be valuable.</p><h2>Instruction sequence reference</h2><p>Compile, link, run,</p><h5>x86 32‐bit</h5><pre><code>> nasm -f elf -F stabs hw.asm
+> ld -o hw hw.o
+> ./hw</code></pre><p>or,</p><h5>x86 64‐bit</h5><pre><code>> nasm -f elf64 -F stabs hw.asm
+> gcc -o hw hw.o
+> ./hw</code></pre><p>A game some people like to play is to make the smallest program they can in a language, and read how big it is. On my machine, the above compiles to 8.8K. Not sure what this proves, aside from maybe hinting at what kind of language it is. Try <a href="http://www.muppetlabs.com/~breadbox/software/tiny/teensy.html">teensy file</a> for a very small file and to learn about ELF.</p><h2>Well…</h2><p>Well, if you try running the final executable file, you will find nothing happens. Or you may recognise this as a clean exit, but it seems underwhelming.</p><p>But, if you compiled with the ‘‐l’ option, you can see in ‘log.lst’ that the file was not empty. It contained code. Ok, the executable has no result. But often in programming exercises, you wind up fighting with the tools for half an afternoon. Then the first start on substantial code is an error. Whereas, it’s unlikely you needed more than a few minutes to install packages of NASM and GCC. You’ll have spent most of that reading over background material.</p><p>This ain’t so bad.</p></article></body></html>

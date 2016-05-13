@@ -1,0 +1,29 @@
+== 14 Libraries
+
+Through the posts so far, we have sneaked in a code library---the C Standard Library, linked in to GCC.
+
+We've talked about how to get code working line by line. Most programmers (except for Javascript programmers) shy away from talking about libraries. But libraries make a huge difference to a computer language. You might like to consider, where would Java be without libraries? An unsolicited quote about Java, ""Acres of good to great code". So far, we've mentioned the C Standard Library.
+
+== Why use a version of the C standard library?
+No need. Any library with callable object code can be called. You could use a Haskel library, a Ruby library, whatever. It's probably too eccentric to use an interpreted language like PHP or a LISP, but you could maybe use some functions. Very high-level languages like Ruby may use C underneath anyway. So I'm saying it is not an automatic step to use this library---other libraries may make sense, especially libraries from languages like Ada or Pascal. It's worth knowing this because it will open out your thinking later---anything with Linux object library code, from any source, by any name, can be called.
+
+You can also use a reduced C Library. See, the C standard library is big, and just because you can call it, you may not want or use it. Some people are in assembler to keep it small. So they produce small stripped re-implementations.
+
+== Stripped/Specialist libraries
+My searches on the web reveal, so far, that there are several specialist libraries. They are a rum bunch (as is the documentation on Assembly language programming). They often imitate some C-like functions, which is comfortable, but not inspiring. I've found versions ranging from a few debug sub-programs, up to libraries which need a C library anyway, in front of which they implement a new interface/facade. But nothing that seems to match the core-acceptable community-based enterprise of, for example, Glib.
+
+As for stripped libraries, in Linux there are several. This has been partially caused by differences over the leadership and direction of ''glibc', and partially by a need for assembly language programmers, and later embedded/mobile developers, to strip size. 
+
+~ Comparison chart by the author of ''musl'. Beyond his selections, a good analysis of what in a library may or may not be available,
+: [a{http://www.etalabs.net/compare_libcs.html}]
+
+
+
+== Portability
+Assembly language is usually not recommended because of a lack of portability. Truth is, at the time of writing, portability of assembly code is not bad. Only two architectures matter to most people---x86, and the ARM architectures on portable devices. In other words, at the time of writing, assembly language is very portable. Though, unlike machine-abstract languages like C, that portability is not robustly guaranteed for the future.
+
+Portability of an assembly language program may not be guaranteed, but if the code uses C Libraries, then portability may be significantly enhanced. Libraries like a C Standard Library, Microsoft or Glib, are themselves guaranteed portable. So you can say, if the assembly code is written heavily and can be altered in bitsize, that the code will work on any version of the computer architecture. If the library is standard, then the code can be compiled for any operating system. 
+
+That's not as portable as Java or NET run-anywhere, but worth thinking about.
+
+

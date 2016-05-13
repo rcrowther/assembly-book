@@ -1,0 +1,145 @@
+= Interfacing to C programs 
+
+== 16-bit conventions 
+Output formats require an underscore on visible symbols.
+
+The memory model needs to be known. See NASM documentation.
+
+=== Called by C
+If parameters are to be used, wrap in,
+
+push bp
+mov bp sp
+...
+mov sp bp
+pop bp
+ret
+
+
+For near functions, parameters start at [ebp+4]. For far functions, paramters start at [ebp+6], and [ebp+4] is the segment address.  (parameters are word size, 16-bit, size 2. [ebp+2] is the return address, pushed by ''call'). Since first (left) parameter was pushed last, this is the first to appear.
+
+=== Calling C
+extern _func
+
+push word [lastParam]
+...
+push word [firstParam]
+call _func
+
+large model (note the segment push),
+
+push word [lastParam]
+...
+push word seg firstParam
+push word [firstParam]
+call _func
+
+[a{http://www.nasm.us/xdoc/2.12.01/html/nasmdoc8.html#section-8.4} see NASM documentation 16-bit interfacing]
+
+
+
+
+== 32-bit conventions 
+
+Most outputs aside from ELF require an underscore on visible symbols.
+
+Function parameters go on the stack, right-left reverse order (first argument is pushed last).
+
+=== Called by C
+If parameters are to be used, wrap in,
+
+push ebp
+mov ebp esp
+...
+mov esp ebp
+pop ebp
+ret
+
+Parameters start at [ebp+8] (pareameters are double word size, 32-bit, size 4. [ebp+4] is the return address, pushed by ''call'). Since first (left) parameter was pushed last, this is the first to appear.
+
+If a library is produced, it must define a Global Access Table (''GOT'). See NASM documentation.
+
+=== Calling C
+; do not use underscore for ELF
+extern _func
+
+push dword [lastParam]
+...
+push dword [firstParam]
+call _func
+
+[a{http://www.nasm.us/xdoc/2.12.01/html/nasmdoc9.html#section-9.1} see NASM documentation 32-bit interfacing]
+
+
+
+== 64-bit conventions
+64-bit conventions use regiswters to carry the first few parameters.
+
+Even if unused, do not rely on parameter registers to carry data across a function call.
+
+== 64-bit C calls (MS)
+
+Most outputs aside from ELF require an underscore on visible symbols.
+
+Integer parameters go in registers  RCX, RDX, R8 and R9. Futher parameters go on the stack right-left reverse order (first argument is pushed last).
+
+
+
+Floating point parameters are passed in XMM0 to XMM3.
+
+When integer and float parameters are mixed, both sets of inputs are stepped, used or not e.g. float xmmo, float xmm1, int r8, float xmm3 
+
+
+=== Called by C
+RBX, RBP, RSI, RDI, R12--R15, and XMM6 to XMM15 are non-volatile. If used, they must be restored.
+
+If integer parameters are to be used, wrap in,
+
+push ebp
+mov ebp esp
+...
+mov esp ebp
+pop ebp
+ret
+
+=== Calling C
+; do not use underscore for ELF
+extern _func
+
+push dword [lastParam]
+...
+push dword [firstParam]
+call _func
+
+
+== 64-bit C calls (System V Solaris/Linux etc.)
+=== Called by C
+RBX, RBP, R12--R15 are non-volatile. If used, they need restoring.
+(RAX, RDX, RCX, RSP, RDI, RSI,  R8--R11, are volatile)
+
+https://github.com/hjl-tools/x86-psABI/wiki/X86-psABI
+
+
+=== Calling C
+Most outputs aside from ELF require an underscore on visible symbols.
+
+Integer parameters go in registers  RDI, RSI, RDX, RCX, R8 and R9. Further parameters go on the stack right-left reverse order (first argument is pushed last).
+
+Floating point parameters are passed in XMM0 to XMM7.
+
+When integer and float parameters are mixed, both sets of inputs are stepped, used or not e.g. float xmmo, float xmm1, int r8, float xmm3 
+
+
+
+
+== Macros
+SystemV
+
+#.cb
+%define CParam1 rdi 
+%define CParam2 rsi 
+%define CParam3 rdx 
+%define CParam4 rcx 
+%define CParam5 r8 
+%define CParam6 r9
+#

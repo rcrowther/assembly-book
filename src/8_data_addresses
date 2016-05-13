@@ -1,0 +1,227 @@
+= 8 Handling data addresses
+
+The place where data is, the ''address', is used a lot in machine code. I sneaked this in to get the rig working. The idea also appeared in the previous chapter, because variable declarations create an address---the ''d(x)' declarations.
+
+To some extent, I sneaked because I'll not be writing a big section on ''What is an address/pointer?' I think I have to assume you have some idea. After all, there's information to cover which is specific to assembly language. If you do need to know, try a beginners guide to C (beats the encyclopedic Wikipedia entry on [a{https://en.wikipedia.org/wiki/Pointer_%28computer_programming%29} Pointers]).
+
+
+== Address/Pointer types
+A comment from a programming book on the computer language Ada,
+
+#bq
+The explicit manipulation of pointers or references has been an important feature of programming languages since Algol 68.
+
+[i Programming in Ada 2005, John Barnes]
+#
+
+Begging to differ, most computer languages which most people encounter do not expose references. This is because raw addressing is prone to errors and, worse, a computer crash. Computer languages have strived to remove the idea (some of the complexity in removing/hiding the idea can be found in the later discussion of parameters in [a{13_subprograms} 13 sub-programs]). The only common language where the idea remains explicit is C (and maybe Pascal and Ada).
+
+If you've not used address/references/pointers before, they refer to where the data is found, not the data itself. In machine code, the reference is a number, an index to memory. In assembly language, this number is attached to a label, which makes the code easier to read and less prone to error.
+
+That said, assembly language addresses/labels are prone to errors--  worse than the legendary C pointers (they have no typing). And they are in no way secure as Ada's ''address types'. This section may crash...
+
+== Creating reference values, declaration and assignment
+When a piece of data is allocated using a d(x) instruction, 
+
+?cb
+    drat: dq 1
+?
+
+it is more or less equivalent to this code in C,
+
+?cb
+    long long drat = 1;
+?
+
+and the assembly compiler does this,
+
+*{addressed_storage.jpg}
+
+
+
+== Modifying reference values, assignment
+To modify values at an address, use square brackets (this is not unlike the notation used by several languages for accessing arrays, but be careful).
+
+
+?cb 
+SECTION .data
+    a: dq 97
+
+SECTION .text
+  mov qword[a], 99
+    printChar 'a'
+    printIs
+    printlnChar [a]
+?
+
+Should return,
+
+?cd.result
+    a: c
+?
+
+not,
+
+?cd.result
+    a: a
+?
+
+The word ''qword' next to the brackets is not an instruction. It is what is called a ''qualifier'. See, assembly code is foolish/flexible, and the compiler needs to know what length of access it is making---in this case, ''qword', i.e. 64 bits. Without the qualifier, an attempt to compile will return,
+
+?cd.result
+    hw.asm:xxx: error: operation size not specified
+?
+
+From an assembly compiler, that is a very explicit message.
+ 
+
+== Getting values, access
+Accessing the data depends on the context. Some machine code instructions accept addresses, not values. Here is ''mov',
+
+?cb
+    mov rax, drat
+?
+
+This puts the value of ''drat' into register ''rax'. 
+
+To get values from an address, use square brackets (this is not unlike the notation used by several languages for accessing arrays, but be careful). 
+
+So if we have a label (label meaning ''shortcut for an address'), to return the value in ''drat',
+
+?cb
+    [drat]
+?
+
+But value addresses are used so much in assembly, there is less need for using the value than you may think. That said, The ''printInt' macro in rig needs them,
+
+??
+SECTION .data
+    house: dq 119
+
+SECTION .text
+    ; print the address
+    println64 house
+    printIs
+    ; print the value
+    println64 [house]
+?
+
+The relatively expensive (latency 3) ''inc (at a memory location)' command needs access. Using the rig example,
+
+?cb 
+SECTION .data
+    a: dq 97
+
+SECTION .text
+    inc qword[a]
+    printChar 'a'
+    printIs
+    printlnChar [a]
+?
+
+should return,
+
+?cd.result
+    a: b
+?
+
+not,
+
+?cd.result
+    a: a
+?
+
+
+== Moving addresses, address arithmetic
+Addresses can be added to, subtracted from, and multiplied. This moves the address to point at other data (relative to the starting address).
+
+
+=== Byte-stepping
+Unwritten in much documentation:
+
+Addresses in assembly language are measured in bytes. Larger size numerics are held in a consecutive set of bytes. A quadword (64-bit) is made of eight bytes. A quadword in memory looks like this,
+
+??
+    byte1
+    byte2
+    byte3
+    byte4
+    byte5
+    byte6
+    byte7
+    byte8
+?
+
+So to get to the next 64-bit address in memory we must add ''8' to every address, not ''1'. On 64 bit, the next quadword address after a quadword at address ''addr' is at ''addr+8'.
+
+Because adding these multiples is tedious and error-prone, the multiplication is often written out explicitly. The fifth quadword address from address ''addr' is [? ''addr+5*8']. Written like this, the next quadword would be [? ''addr+1*8'] (the same as ''addr+8').
+
+
+=== Long data in memory (arrays, etc.)
+Intel documentation,
+
+#bq
+The low byte (bits 0 through 7) of each data type occupies the lowest address in memory and that address is also the address of the operand.
+#
+
+In other words, when you add a label to a piece of long memory, the label points to the address of the first byte. This is what you want, because that's what the CPU instructions use (they then step along the bytes, processing them).
+
+You can step along the bytes yourself, manully--""Get me quadword number 7". In other words, an array.
+
+=== Syntax
+NASM documentation makes a play that NASM handling of relative addresses is, compared to TASM and MASM, a simple system. YASM documentation (based in NASM with useful additions) talks about ''Effective addresses'. Personally, I find the descriptions, while historically vital, confused. Are they talking about addresses (references), or getting contents (de-referencing)? The descriptions further seem contradictory---is an ''memory address' getting an address or contents?
+
+Anyway, to get a relative address, push all the arithmetic into square brackets. Let's say we have a long piece of data called ''houseNumbers',
+
+?cb
+SECTION .data
+    houseNumbers: dq 2
+?
+
+''houseNumbers' refers to the start address of the data (this is an array. We cover arrays consistently in [a{16_small_data_collections.htm} 16 Small Data Collections]).
+
+
+To get the value from the next address after ''houseNumbers' (i.e. the second piece of data),
+
+?cb
+    mov rax, [houseNumbers+8]
+?
+
+Why ''8'? See the previous section.
+
+
+If you want to use a value from a register, it will work inside the square brackets. Say ''rcx' holds an address, and we want the quadword after that address,
+
+?cb
+    mov rax, [rcx+8]
+?
+
+From an assembly language compiler, this is intuitive.
+
+
+== Setting to null
+In C programming, pointer variables are often initialised to NULL. This has the advantage that, if used by error, the operating system will not crash (address ''0' will be reserved and protected). It also means the pointer can be tested to see if a value has been allocated.
+
+What happens if assembly code accesses address ''0'?
+
+?cb 
+    mov qword[0], 99
+?
+
+results in the unhelpful but neutral,
+
+?cb.result
+    Segmentation fault
+?
+
+Possibly because of explicit declarations, I find accessing uninitialised storage less likely in assembly than in C. But the practice is worth remembering.
+
+
+== Errm...
+The single address types in assembly language create variables, as opposed to fixed constants. So their action is useful, but the address serves no purpose (aside from showing you how it is done). That the address is exposed is a source of errors, and higher-level languages disguise them.
+
+The power of addresses is in arithmetic. This allows large/incongruous data types to exist (covered later in [a{16_small_data_collections.htm} 16 Small Data Collections]). In a subset of that ability, pointer arithmetic allows arrays, from which, for example, stack manipulation is possible. Read on...
+
+This post mentions the language C several times, which is useful, because pointers in C have the same model as used in assembly. However, there are differences. Assembly language is raw, and does not know the number of bytes to move, nor the number of bytes to retrieve, when addresses are involved---it uses bytes for everything. Maybe as bad, assembly language does not have any notation for addresses and values---aside from the square brackets, all looks the same. So it can be seen that the language C, often maligned for the frequent errors it's pointer implementation can cause, is a good advance on assembly language.
+
+

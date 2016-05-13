@@ -1,0 +1,216 @@
+== Macro set reference
+
+All macros used during the posts.
+
+?cb
+
+; Pushes registers which must be preserved when called from C.
+;
+; For System V calls. Pushes rbx, and rbp.
+;
+; See also pushNonVolatileExtended
+; 
+%macro  pushNonVolatile 0
+    push rbx
+    push rbp
+%endmacro
+
+; Pops registers which must be preserved when called from C.
+;
+; For System V calls. Pops rbx, and rbp.
+;
+; See also popNonVolatileExtended
+; 
+%macro  popNonVolatile 0
+    pop rbp
+    pop rbx
+%endmacro
+
+; Pushes registers which must be preserved when called from C.
+;
+; For System V calls. Includes additional 64-bit registers.
+; Pushes rbx, rbp, r12--r15.
+;
+; See also pushNonVolatile
+; 
+%macro  pushNonVolatileExtended 0
+    push rbx
+    push rbp
+    push r12
+    push r13
+    push r14
+    push r15
+%endmacro
+
+; Pops registers which must be preserved when called from C.
+;
+; For System V calls. Includes additional 64-bit registers.
+; Pushes rbx, rbp, r12--r15.
+;
+; See also popNonVolatile
+; 
+%macro  popNonVolatileExtended 0
+    pop r15
+    pop r14
+    pop r13
+    pop r12
+    pop rbp
+    pop rbx
+%endmacro
+
+; Pushes registers used for parameters on C calls
+;
+; For System V calls. Includes additional 64-bit registers. 
+; Pushes rdi, rsi, rdx, rcx, r8, r9.
+;
+; Stacks every register used. This is wasteful if the register carries
+; no significant data. However, the sub-program, and it's complement,
+; may still find use where debugging or general protection (e.g inside 'main')
+; is needed.
+;
+; See also popParameterRegisters
+; 
+%macro  pushParameterRegisters 0
+;RDI, RSI, RDX, RCX, R8 and R9
+    push rdi
+    push rsi
+    push rdx
+    push rcx
+    push r8
+    push r9
+%endmacro
+
+; Pops registers used for parameters on C calls
+;
+; For System V calls. Includes additional 64-bit registers. 
+; Pops rdi, rsi, rdx, rcx, r8, r9.
+;
+; Stacks every register used. This is wasteful if the register carries
+; no significant data. However, the sub-program, and it's complement,
+; may still find use where debugging or general protection (e.g inside 'main')
+; is needed.
+;
+; See also pushParameterRegisters
+; 
+%macro  popParameterRegisters 0
+;RDI, RSI, RDX, RCX, R8 and R9
+    pop r9
+    pop r8
+    pop rcx
+    pop rdx
+    pop rsi
+    pop rdi
+%endmacro
+?
+
+Debug sub-programs,
+
+?cb
+;; Many unansered questions. Why do flags interfere?
+;; Why is stack pointer so high?
+;; etc.
+.rodata
+stack_format: db  "Stack Dump # %d RBP = %.8X RSP = %.8X", NL, 0
+stack_line_format: db "%+4d  %.8X  %.8X", NL, 0
+
+.data
+dump_stack:
+    ; new frame
+    ;; i.e. sp == bp
+	enter 0,0
+
+    ; preserve some temp registers
+	pushf
+    push tmpRegNonC1
+    push tmpRegNonC2
+    push tmpRegNonC3
+    push tmpRegNonC4
+    ;push tmpRegNonC5
+
+
+    ; a frame count?
+    mov tmpRegNonC1, 25
+
+    ; previous RSP
+    ;; (rbp)
+    mov tmpRegNonC2, rbp
+    mov CParam4, tmpRegNonC2
+
+    ; previous RBP
+    ;; (rbp contents)
+    mov tmpRegNonC3, qword [rbp]
+    mov CParam3, tmpRegNonC3
+
+    ; # COUNT
+    mov CParam2, tmpRegNonC1
+
+    ; print
+    mov CParam1, qword stack_format
+    call printf
+
+; if rbp = 0...
+
+    ; tmpRegNonC2 = & of top qword in prev frame, and track down stack
+    ;; no interest in the rbp push or call return address
+    lea tmpRegNonC2, [rbp+16]
+
+	; loop count
+	mov tmpRegNonC1, tmpRegNonC2
+    ;; minus base address
+    sub tmpRegNonC1, tmpRegNonC3
+    ; /8
+	shr tmpRegNonC1, 3
+
+    println64 tmpRegNonC1
+
+
+
+	; mov	tmpRegNonC1, tmpRegNonC4
+	mov	tmpRegNonC1, 8
+
+
+    ;println64 tmpRegNonC1
+
+    stack_line_loop:
+
+        ; value on stack
+	    mov CParam4, [tmpRegNonC2]
+	    ;mov CParam4, 77
+
+        ; address of value on stack
+	    mov CParam3, tmpRegNonC2
+	    ;mov CParam3, 66
+
+        ; offset from ebp
+		mov tmpRegNonC4, tmpRegNonC2
+        sub tmpRegNonC4, tmpRegNonC3  
+        shr tmpRegNonC4, 3
+	    mov CParam2, tmpRegNonC4
+	    ;mov CParam2, 44
+	    ; println64 tmpRegNonC4
+
+        ; print
+        mov CParam1, qword stack_line_format
+	    call printf
+
+        ; move the address down the stack
+	    add tmpRegNonC2, 8
+
+        ; decrement the count
+        dec tmpRegNonC1
+        cmp tmpRegNonC1,0
+	    jne stack_line_loop
+
+    forward:
+    ; restore temp registers
+    ;pop tmpRegNonC5
+    pop tmpRegNonC4
+    pop tmpRegNonC3
+    pop tmpRegNonC2
+    pop tmpRegNonC1
+    popf
+
+    leave
+    ret 
+?
+

@@ -1,0 +1,124 @@
+<!DOCTYPE html><html><head><title>7_assignments</title><meta http-equiv="content-type" content="text/html; charset=UTF-8" /><link rel="stylesheet" type="text/css" media="screen" href="../lib/doc.css"/></head><body><article><h1>7 Assignments</h1><p>Now we have a basic rig, we start on arithmetic… Well, that’s what most assembly tutorials seem to do. But we are not everybody else, so we start on how to create basic data—variables and constants,</p><h2>db—space allocation</h2><p>Remember this, from the rig (that I said you can take on trust?),</p><pre><code>SECTION .data
+    printTest: db 'Aye', 0h
+    printlnFmt: db "%s", 10, 0</code></pre><p>Ignore the fact they are strings, Lets go for basics.</p><p>‘db’ introduces data. If that is what it does, it is introducing data into the section of an ELF file which we have said contains ‘initiated data’</p><p>There are several instructions in the ‘db’ family. The instructions stand for,</p><blockquote><p>‘data’<a one letter code for the size></p></blockquote><p>So,</p><dd><dd>db</dd><dt>data byte (8‐bit)</dt><dd>dw</dd><dt>data word (16‐bit)</dt><dd>dd</dd><dt>data double (32‐bit)</dt><dd>dq</dd><dt>data quad (64‐bit)</dt><dd>dt</dd><dd>ddq</dd><dt>data double quad (128‐bit)</dt><dd>do</dd><dt>alias for double‐quad (128‐bit)</dt></dd><h3>Sizing</h3><p>So what are these funny size marks?</p><p>Once upon a time there was a ‘byte’. Computers used it. Then the byte had to get longer. Meanwhile, there was a ‘word’, which was the ‘natural’ bus size of a computer. But then Microsoft decided this was getting silly and confusing, so they set ‘word’ to 16‐bits. Microsoft were not alone, dealing with strings, C decided smallest adressable size (usually 8‐bit) would be a ‘char’, and threw in ‘t_size’. Java made a effort to straighten this out, finalizing a system which is not compatible with anyone else.</p><p>In NASM,</p><dd><dd>BYTE</dd><dt>8‐bit</dt><dd>WORD</dd><dt>(following Microsoft fix) 16‐bit</dt><dd>DWORD</dd><dt>double natural size, 32‐bit</dt><dd>QWORD</dd><dt>quad natural size, 64‐bit</dt></dd><p>and C types?</p><dd><dd>char</dd><dt>(%c) smallest size, usually 8‐bit</dt><dd>int</dd><dt>(%i or %d) at least 16‐bit</dt><dd>long</dd><dt>(%li) at least 32‐bit</dt><dd>long long</dd><dt>(%lli) quad natural size, 64‐bit</dt><dd>float</dd><dt>(%f) Not core spec, usually 32 bits</dt><dd>double</dd><dt>(%f yes, same as float) Not core spec, usually 64 bits</dt></dd><p>What a mess.</p><p>Ok so we carefully match types, then try this code. It will fail,</p><pre><code>SECTION .data
+    …
+    a: db 97
+    b: dd 56789
+    c: dq 56789
+    d: dd 5.6789
+    e: dq 2.5
+
+main:
+    …
+    printChar 'a'
+    printIs
+    printlnChar a
+    printChar 'b'
+    printIs
+    println32 b
+    printChar 'c'
+    printIs
+    println64 c
+    printChar 'd'
+    printIs
+    printlnFloat d
+    printChar 'e'
+    printIs
+    printlnFloat e
+    …</code></pre><p>The floats cause this,</p><pre class="result"><code> error: invalid combination of opcode and operands</code></pre><p>Comment or cut them (‘d’ and ‘e’). Try again,</p><p>The ‘printf’‐based instructions are robust, and will print out. However, we have a problem, because the numbers print out wrong—not what was defined. Your results may even vary, but for sure they are garbage. I get this,</p><pre class="result"><code>a: @
+b: 6295617
+c: 6295621</code></pre><p>If you are in 32‐bit, the result may look better, but…</p><p>This is going wrong, and can go wrong, in several places. If you write as above, you are assuming there is some idea of type being passed about. That the original definition is typed, the load into the register is typed, and that the ‘printf’ knows what it is doing.</p><p>But in assembly language, type only exist to define an immediate size. For example, we defined variable ‘d’ as a 32‐bit. With assembly‐language precision it may have been stored as 32‐bit. Then the value was loaded into a register—in our example, a 64‐bit register. So either the top end of the register was unused (thus carrying garbage), or an oversize lump was carved from memory to fill it (with extra garbage). We are using macros, so at least we know the register is being loaded for the ‘printf’ call—but what if we had been using a function call? Then the value would have travelled to the stack, maybe with it’s own conventions for data size. And then the register value was passed in the C call—unknown C code where we hope the compiler and printing code understands our intentions. Quite a few places to go wrong.</p><p>Let’s fix it.</p><h2>Fix the assignments</h2><p>First, we have no chance with floats. For now, remove/comment them both.</p><p>Now, in 64‐bit, all storage sizes should be 64‐bit, ‘dq’.</p><p>Then, first way, access/de‐reference the reference values,</p><pre><code>SECTION .data
+    …
+    a: dq 97
+    b: dq 56789
+    c: dq 56789
+    d: dq 5.6789
+    e: dq 2.5
+ 
+main:
+    …
+    printChar 'a'
+    printIs
+    printlnChar [a]
+    printChar 'b'
+    printIs
+    println64 [b]
+    printChar 'c'
+    printIs
+    println32 [c]
+    printChar 'd'
+    printIs
+    printlnFloat [d]
+    printChar 'e'
+    printIs
+    printlnFloat [e]
+    …</code></pre><p>or, second way, use ‘equ’ and let the compiler work magic,</p><pre><code>SECTION .data
+    …
+    a: equ 97
+    b: equ 56789
+    c: equ 56789
+ 
+main:
+    …
+    printlnChar 'a'
+    printlnChar a
+    printlnChar 'b'
+    println64 b
+    printlnChar 'c'
+    …</code></pre><p>Either way, that’s better,</p><pre class="result"><code>a
+a
+b
+56789
+c
+56789</code></pre><p>Try a complete 32 bit pipeline, and you will get this error,</p><pre class="result"><code>hw.asm:xxx: error: mismatch in operand sizes</code></pre><p>The ‘printf’ call baulks. See down a bit.</p><h2>Sections</h2><p>Remember this, from post 2?</p><dd><dd>SECTION .text</dd><dt>contains the instructions that is executed. The only section that can be</dt><p>executed. Treated as read‐only data once the program is run.</p><dd>SECTION .data</dd><dt>contains initialised data. It cannot be executed, but may be read from</dt><p>and written to when the program is run. Contains ‘dx’ type pseudo‐instructions.</p><dd>SECTION .bss</dd><dt>contains uninitialised data. It cannot be executed, but may be read from</dt><p>and written to when the program is run. Contains ‘resx’ pseudo‐instructions.</p><dd>SECTION .rodata</dd><dt>contains initialised read‐only data. It may not be written to. Contains ‘dx’ type pseudo‐instructions.</dt></dd><p>If we are stupid, here is what happens,</p><pre><code>BITS 64
+SECTION .rodata
+    roa: dq 97
+    rob: equ 97
+    ; "warning: uninitialized space declared in non-BSS section `.rodata': zeroing"
+    ;roc: resq 1
+
+SECTION .data
+    ia: dq 97
+    ib: equ 97
+    ; "warning: uninitialized space declared in non-BSS section `.data': zeroing"
+    ; ic: resq 1
+
+SECTION .bss
+    ; "warning: attempt to initialize memory in BSS section `.bss': ignored"
+    ; da: dq 97
+    db: equ 97
+    dc: resq 1
+
+SECTION .text
+global main
+main:
+    push rbp
+
+    println64 [ia]
+    println64 ib
+    println64 [roa]
+    println64 rob
+    println64 db
+    ; prints uninitialized crap
+    println64 dc
+
+    ; this works...
+    mov rax, [qword ia] 
+    mov [dc], rax 
+    print64 [dc]
+
+    ; attempt to assign to otherwise similar read-only var
+    ; returns "Segmentation fault"
+    mov rax, [qword ia] 
+    ; mov [roa], rax
+    ; print64 [roa]
+
+    pop rbp
+    mov rax,0
+    ret</code></pre><p>Uninitialised space in sections where data must be initialized is initialized to zero. The attempt to create initialized memory in ‘.bss’ is ignored.</p><p>There is a purpose for the read‐only initialized data—it can carry any large structure which is read‐only (as address/pointer). Though, in the loose world of assembly language, this is unusually fine coding.</p><h2>Macros</h2><p>This notation for bit‐size drives me fly‐crazy,</p><pre><code>; Size-labeled data definitions
+%define const equ
+%define ref8 db
+%define ref16 dw
+%define ref32 dd
+%define ref64 dq
+%define ref128 ddq</code></pre><p>//////////////////</p><p>When size not defined well,</p><pre><code>hw.asm:283: error: operation size not specified</code></pre></article></body></html>

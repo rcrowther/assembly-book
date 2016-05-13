@@ -1,0 +1,33 @@
+== 13 IDEs
+Do you need an IDE for Assembly language coding? If you ask online, the answer will be no.And none of our posts need or use debugging.
+
+However, if you ask a question about assembly language, you will be told to use a debugger, So if you go so far as to start seriously writing code, you will one of those. And it is only a short step from there to talking about an IDE. As usual, the sarcasm here is that you may need the IDE, with all the trouble of installing and learning, when you are a beginner. 
+
+The IDE will do syntax highlighting, have a dedicated text editor, and may point out errors etc. An IDE debugger may tell you what is in each register. In general, the lower-level the language, I find, the more desperately it needs tool-support. Ruby is ok to write in a text editor, but C is inhuman. This isn't always true---C and C++ compilation is worse than assembly language compilation---worse than anything. But assembly language benefits from an IDE.
+
+Reputedly, Microsoft Visual Studio has a MASM editor. I'm poor, I wouldn't know about that. The Open-Source, all-platform, Java-monstrosity IDE, ''Eclipse', will have a project or two. Due to transient error, I hesitate to recommend anything to do with Eclipse. Try using the Eclipse ''marketplace', see if any assembly language project heads in a direction you are interested in.
+
+
+== Half-IDEs
+Some text editors have useful boosts, such as being able to run terminals at the same time as writing. They may also do syntax highlighting.
+
+For QT-based systems, try ''Kate'. For Debian based systems, try ''Gleany'. And if you want to work from the commandline, then there is always EMACS (probably only recommended if you are already an EMACS user).
+
+
+ 
+== gdb
+''gdb' is the linux (correctly, Open Source and pre-Linux) debugger for C and other code. It works for assembly language.
+
+I ought to give instructions, but try this, [a{http://www.csee.umbc.edu/portal/help/nasm/nasm.shtml}].
+
+
+
+== A couple of specialist tools
+Here are two specialist IDEs which have been around a while,
+
+++
+~ Flat assembler. Been around a while, support seems ongoing. Multiple compiling passes to optimise code. GUIs? Maybe,
+: [a{http://flatassembler.net/download.php}]
+~ SASM. The GUI is QT-based, so KDE desktop inclined,
+: [a{https://dman95.github.io/SASM/english.html}]
++

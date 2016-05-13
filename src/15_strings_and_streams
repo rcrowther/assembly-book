@@ -1,0 +1,151 @@
+= 14 Strings and Streams
+
+One of the big pains in assembly programming is strings. We've used them already, but you may have noticed string constants need to be defined in a data section, not within the ''.text' code section. They can't be declared as an ''anonymous constant'. Which means a lot of extra typing, and a lack of while-coding flexibility. I'd like,
+
+?cb
+    print("eax", eax)
+?
+
+resulting in
+
+?cb.result
+    eax: 22
+?
+
+Not going to happen in assembly code. There's no way round this.
+
+== String types
+
+Though assembly/machine code carries no notion of type in the code, the instructions operate assuming a kind of type or, at least, a layout of data.
+
+Given the general aims of assembly code, it may come as a surprise that a type of ''string' exists. You may well say, ""But a string of basic encoding is an array?". Intel documentation,
+
+#bq
+===== 4.5 STRING DATA TYPES
+Strings are continuous sequences of bits, bytes, words, or doublewords. A bit string can begin at any bit position of any byte and can contain up to 2 32 – 1 bits. A byte string can contain bytes, words, or doublewords and can range from zero to 2 32 – 1 bytes (4 GBytes).
+#
+
+Let's look at the general purpose instructions for strings. All these instructions work from addresses held in ''rsi' and ''rdi'. For other address sizes, here is Intel documentation,
+
+#bq
+The address of the first source operand is read from DS:SI, DS:ESI
+or RSI (depending on the address-size attribute of the instruction is 16, 32, or 64, respectively). The address of the second source operand is read from ES:DI, ES:EDI or RDI (again depending on the address-size attribute of the instruction is 16, 32, or 64).
+#
+
+Here are the instructions, which all work on integers sourced from a ''string',
+
++dd
+~ CMPS(x)
+: Compare two integers. The address to be compared is in ''rsi', the destination is in ''rdi'.
+~ MOVS(x)
+: Move an integer. The address to be moved is in ''rsi', the destination is in ''rdi'. Increment ''rsi' and ''rdi' by the width loaded. 
+~ LODS(x)
+: Load an integer into ''rax'. The source address is in ''rsi'. Increment ''rsi' by the width loaded. 
+~ SCAS(x)
+: Compare an integer with ''rax'. The address to be loaded is in ''rsi'. Increment ''rdi' by the width loaded. 
+~ STOS(x)
+: Store an integer from ''rax'. The destination address is in ''rdi'. Increment ''rdi' by the width loaded. 
+~ REP(Z|NZ)
+: Manic instruction prefix for other string instructions. Counts down using ''rcx'. May breakout of the count on Not Equal/Equal conditions. Only for single instructions, otherwise use an explicit loop.
++
+
+Note this odd behaviour: for CMPS(x) MOVS(x), SCAS(x), these commands allow parameters ''for documentation'---qualifiers about data bitsize will be used, but the location is ignored.
+
+Are these commands compound commands? It seems, mostly they are, but they do replace multiple instructions such as ''dec', ''mov', with relative addresses thrown in. ''rep(x)' is reputedly fast and in common usage.
+
+So if you thought ''string' is a name for array instructions, then mostly right. However, use of the ''rsi', and ''rdi' registers suggests the instructions are intended not for general array work, but the kind of I/O work that high-level languages call ''streams' (though there is an instruction set for moving to and from ports).
+
+msg  db  'Hello, world!',0xa ;our dear string
+len  equ  $ - msg  
+
+== Unicode
+Now, if you have not stumbled across it, here is a surprise. NASM documentation,
+
+#bq
+===== 3.4.5 Unicode Strings
+
+The special operators __utf16__, __utf16le__, __utf16be__, __utf32__, __utf32le__ and __utf32be__ allows definition of Unicode strings. They take a string in UTF-8 format and converts it to UTF-16 or UTF-32, respectively.
+#
+
+I've not dug into it, but NASM must have supplementary code. x86 CPUs do not have Unicode instructions. 
+
+So, NASM (and YASM) have basics for creating Unicode. Fixed width Unicode, anyway. This has an obvious use---OS call parameters, like filepaths, can be in the form required.
+
+Then again, it's not so good. Where's (the admittedly more difficult) UTF-8? And don't kid yourself this means you can use Unicode inside general assembly language coding. How will you print out? 
+
+The answer would be, use a library call. For Unicode printing. For example, import Glib and look for a wide string call.
+
+
+=== Printing Unicode strings
+If you've not used Unicode in C, it's a stringy tangle. It all makes sense and has standards and reason, but it's a stringy tangle. So,
+
+== Quick C coverage
+There are three ways to go, with different support. Official C,
+
++dd
+~ Multibyte (character) string
+: Catch all anything string, one or multi-byte, any encoding. It's ''whatever the Operating System supplies'. Ok for input output, opaque for string manipulation.
+~ Wide (character) string
+: Fixed size character string. It's ''whatever the locale is set to'. Can be Unicode (16--32 bit), but not UTF-8. Platform dependant.
++
+
+...or fix on a type and forcibly convert. Which sounds good to me, but has issues. You need to know what encoding a string is in. There is no standard for detection---an encoding can be guessed from the ''Locale', or clues in a file. Text editors have big code to deal with this.
+
+By the by, standard C libraries can convert from locale encodings to fixed width,  using ''mbstowcs()' and ''wcstombs()'. But they can't get to UTF-8.
+
+
+
+Some libraries,
+++
+~ Wikipedia on ''wide characters',
+: [a{https://en.wikipedia.org/wiki/Wide_character}]
+~ Useful summary on C language (so C library) scenarios,
+: [a{http://www.cprogramming.com/tutorial/unicode.html}]
+~ Glib (not Glibc, which is a subset?) has UTF-8 support,
+: [a{https://developer.gnome.org/glib/stable/glib-Unicode-Manipulation.html}]
+~ MicroUTF-8. Untried,
+: [a{http://puszcza.gnu.org.ua/software/microutf8/}]
+~ UTF8Proc. Untried,
+: [a{http://www.flexiguided.de/publications.utf8proc.en.html}]
++
+
+== Print out Unicode
+NON-WORKING CODE
+
+
+http://stackoverflow.com/questions/18072130/print-out-unicode-characters-in-assembly-using-wprintf-linux-x86-64-platform
+
+?cb
+extern wprintf
+
+; ...
+
+SECTION .data
+	locale: db "", 0
+
+    ; format must also be in UTF-32
+    fmt32: dd __utf32__("%lc"), 0
+    ; dword = 32-bit
+    t32: dd __utf32__("The sun rose"), 0
+
+SECTION .text
+    ; Must set locale first,
+    ; to define wChar etc.
+    mov rdi, 0
+    mov rsi, locale
+    call setlocale
+
+    mov rdi,fmt
+	mov	rsi, t32
+    call wprintf
+?
+
+
+== End (of string)
+Bear in mind that Unicode is common nowadays. And UTF-8 is becoming a baseline, and is not a fixed-width array of chars. Even a fixed-width type like UTF-16 (the default Java ''String' encoding) has complications of extended and concatenating characters. Unless source strings are internal constants, you need library code. Otherwise, Unicode is too much trouble.
+
+Which is not to say there is not a place for 8-bit Latin/ASCII characters in many places. But, if the program is anything other than a utility, it may need internationalisation.
+
+The situation is C is a mess. And that's important because the C Standard Library would be the first way to go. But C options are the obscured, if minimal feature, ''multibyte string'; or to force a general locale and use ''wide string'. If you want to assure string encoding, you will need to get dirty with conversions through an ''iconv' library.
+
+As for the way to handle strings... if you import data from users as strings or, especially, trade with other post-Millennium code, use a library. If you need extensive string manipulation such as concatenation and building, use a library and heap allocation. Otherwise the question is, how much of this do you want to hand-code using raw integer stepping? In most cases, the only useful assembly-language implemented string code is a simple information printout.

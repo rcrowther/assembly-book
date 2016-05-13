@@ -1,0 +1,36 @@
+<!DOCTYPE html><html><head><title>17_unnatural_numbers_coercion</title><meta http-equiv="content-type" content="text/html; charset=UTF-8" /><link rel="stylesheet" type="text/css" media="screen" href="../lib/doc.css"/></head><body><article><h1>Unnatural numbers</h1><p>Intel</p><p>7.3.1.6</p><p>Type Conversion Instructions</p><h2>Handling other data sizes</h2><p>Now, this seems to mean that you can’t use anything other than the bus size for manipulating data. But then, how come those high‐level languages offer a fine display of basic numeric data sizes? Java has ‘Byte’, ‘Short’, ‘Int’, ‘Long’, and offers them on all supported architectures?</p><p>To some extent, the CPU works at it’s given bus size. Hoever, the x86 CPU has simply extended the same registers to do this. On a x86‐64 CPU, it is still possible, and possible in NASM, to refer to the old 32 bit register EAX, which uses the bottom half of RAX. And the old 16‐bit register AX which uses the bottom 16bits of RAX. And the old 8‐bit registers AH and AL are the bottom two sides of the AX 16‐bit register. A diagram,</p><p>Moreover, an instruction like mov will work with one of these values. On x86, this is still valid,</p><pre><code>    mov eax, 89</code></pre><p>But bear in mind two things. First, if that register is later referred to as ‘rax’, to retrieve the value, it will have crap in the top 32 bits. Maybe signed crap. Second, you may not gain speed, despite the fact the CPU seems to be doing less. AMD documentation for 32‐bit CPUs lists 8‐bit arithmetic having much the same latency at 8‐bit or 32‐bit. Maybe an odd clock sycle here and there. And the odd size numbers may disturb the cool of the memory adressing (the ‘alignment’). That’s why C language tends to recommend, other factors aside, coding at the bus width. And programmers sometimes suggest that smaller is not faster.</p><p>There are a few good reasons for not using bus‐size numerics, though. A need to conserve space when using big data, a need to match I/O or other interfaces, a need for massive precision. Don’t let me put you off.</p><h2>Number conversion (coercian)</h2><p>Seems an advanced topic, but I guess everyone will want do do it sometime. We’ve already covered a few conversions.</p><h3>Conversions to larger size integers</h3><p>Conversion to larger sizes is sometimes needed because of the nature of arithmetic. Lets say I have a ‘short’ size variable, and fill it with a constant SHORT_MAX_VALUE. If I then multiply by another value, or even add one, then the result will not fit in a ‘short’.</p><h3>Conversions to smaller size integers</h3><p>Converting to smaller types always runs a risk of truncation, so should usually be surrounded by tests.</p><h3>Conversions to and from float</h3><h3>Floating point to integer</h3><h2>Retrieving data from the FTP</h2><p>Getting results from the FPU is difficult.</p><p>‘fst’ is supposed to store to real memory???</p><p>‘fist’ is supposed to store an integer to real memory???</p><???><p>not working</p><pre><code>    d: dq 5.5
+    e: dq 1.5
+    tot: dq 6
+
+SECTION .bss
+
+tmpF: resq 1
+
+main:
+    push rbp
+
+    fldz
+    fld qword [d]
+    fadd qword [e]
+    fist dword [tmpF]
+    printlnFloat [tmpF]</code></pre><h3>Floating point to intger comparisons</h3><p>Condition results must be popped out of the FPU then pushed to a standard register. ‘fstsw’ is a speciality which gets the status word into the main register ‘ax’ or some other 16‐bit memory. It’s the way to infuence normal code by floating point conditions. ‘sahf’ is a core instruction to store AH into FLAGS (we are not too interested in flags in these posts, as they mostly work for comparisons, which mostly works, but you need to know this command at this point). So, here we go, example code,</p><p><*ADAPT!!**/></p><pre><code>SECTION .data
+    …
+    d: dq 5.5
+    e: dq 1.5
+    tot: dq 7.0
+
+main:
+    …
+    fldz
+    fld qword [d]
+    fadd qword [e]
+    fcom qword [tot]
+    fstsw ax
+    sahf
+    jna else1
+        printlnStr falseMsg
+        jmp forward1
+    else1:
+        printlnStr trueMsg
+    forward1:
+    …</code></pre><p>Ok, if that worked, we got conditional execution depending on a floating‐point value.</p></???></article></body></html>

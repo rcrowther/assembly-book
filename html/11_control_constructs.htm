@@ -1,0 +1,170 @@
+<!DOCTYPE html><html><head><title>11_control_constructs</title><meta http-equiv="content-type" content="text/html; charset=UTF-8" /><link rel="stylesheet" type="text/css" media="screen" href="../lib/doc.css"/></head><body><article><h1>11 control constructs</h1><p>Believe it or not, when we started talking abbout ‘add’, we left most web tutorials way behind. So we’re reaching out here.</p><h2>if…else…</h2><p>First we need some compare instructions. In many cases, ‘CMP’. It can compare registers, memory, and immediates (constants???). That’s what we need.</p><p>Intel documentation,</p><blockquote><p>7.3.2.4 Comparison and Sign Change Instructions</p><p>The CMP (compare) instruction computes the difference between two integer operands and updates the OF, SF, ZF, AF, PF, and CF flags according to the result. The source operands are not modified, nor is the result saved. The CMP instruction is commonly used in conjunction with a Jcc (jump) or SETcc (byte set on condition) instruction, with the latter instructions performing an action based on the result of a CMP instruction.</p></blockquote><p>They set flags. We’ve not met flags. Still, flags are tiny variables. Then, if the variable is set, we jjump ‘Jcc’.</p><p>Don’t know about you, but this is not the way I would say it. I’d say, “Do this, or this”. I’m not saying Intel are wrong, and very good reasons will be hovering about. But what we would do to do an “if” is this,</p><pre><code>  X CMP Y
+  JCC on Flags to Label 1
+    <do conditional action>
+
+Label 1:
+  <carry on></code></pre><p>And an “if…else…” is this,</p><pre><code>X CMP Y
+JCC on Flags to Label 1
+  <Do non-successful action>
+  JMP Label 2
+
+Label 1:
+  <Do successful action>
+
+Label 2:
+  <carry on></code></pre><p>You are in machine code for elegance?</p><pre><code>
+SECTION .data
+    trueMsg: db 'cond suceeded', 0
+    falseMsg: db 'cond failed', 0
+    …
+
+main:
+    push rbp
+
+
+  ; mov rax, 4
+  cmp rax, 4
+  jne else
+    printlnStr trueMsg
+    jmp forward
+  else:
+    printlnStr falseMsg
+  forward:
+
+    pop rbp
+    mov rax,0
+    ret</code></pre><p>Try uncomment the ‘mov’, see what happens.</p><h2>While…</h2><p>Not a single example covering how to loop.University primers must see it below them. Honestly, it’s no wonder assembly code is ‘difficult’.</p><p>Ok, a loop, made from things we know,</p><pre><code>main:
+    push rbp
+
+    mov rcx,7	
+
+    loop1:
+        printlnInt rcx
+	    dec	rcx
+	    cmp	rcx, 0
+	    jg	loop1
+
+    pop rbp
+    mov rax,0
+    ret	</code></pre><p>However, here is some Intel documentation,</p><blockquote><p>7.3.8.2</p><p>Conditional Transfer Instructions</p><p>…</p><p>The LOOP, LOOPE (loop while equal), LOOPZ (loop while zero), LOOPNE (loop while not</p><p>equal), and LOOPNZ (loop while not zero) instructions are conditional jump instructions that use the value of the ECX register as a count for the number of times to execute a loop. All the loop instructions decrement the count in</p><p>the ECX register each time they are executed and terminate a loop when zero is reached.</p></blockquote><p>‘xCX’, you may recall, is the counting register.</p><p>A combined command for the above. Now we have,</p><pre><code>main:
+    push rbp
+
+    mov rcx,7	
+
+    loop1:
+        printlnInt rcx
+	    loopnz	loop1
+
+    pop rbp
+    mov rax,0
+    ret	</code></pre><p>Is there a criminal, dirty, unprofessional reason for this. According to AMD documentation, no,</p><blockquote>Instruction    Latency
+DEC            1
+CMP            4
+JG             1
+
+LOOPNZ         8</blockquote><p>Like higher level languages, the raw code is faster. Is is really for cleaner programming???</p><p>Anyway, these are two ways do a counting loop. Also, it goes some way to explaining known effects in higher‐level (than assembly code) languages. You know that C while loops are very fast? And that, even in higher level languages which can’t express decrement (except in general terms), decrementing a loop counter to zero is often the fastest control? Well, if the compiler spots those loops, they must reduce to a ‘cmp loop’ instruction pair. Without knowing the number of clock cycles, it’s a promising situation theoretically—compare to zero ought to be fast—and a promising situation in terms of processor opcodes— two.</p><p>Also. I’ve seen the C for…else… statement described as ‘flecible’. It is also, often, very fast (there’s an ongoing discussion about how fast, the statement is often recommended for style). Personally I find the statement has a lumbering syntax and a pain to write. But you can see how the clumsy syntax turns into efficient machine code—if the compiler detects conditions such as a simple decrement, or can optomise to a decrement, then the statement reduces to a couple of instructions.</p><p>Another (more common) kind of loop places the condition at the top, then must jump out,</p><pre><code>main:
+    push rbp
+
+    mov rcx,7	
+
+    loop1:
+        dec rcx
+	    cmp	rcx, 0
+        jl forward
+        printlnInt rcx
+	    jmp loop1
+    forward:
+
+    pop rbp
+    mov rax,0
+    ret	</code></pre><p>A classic while loop.</p><p>Of course, there are limitations here. I’ve not considered protecting the registers. I’ve not considered looping over a range (the <code>for()…</code> statement in C). (Hint: try some arrangement such as a loop counter in memory or a register (so that it can be accessed within the loop), and push/pop limits from the stack). If you like or need such devices, there may be a need for a ‘break’.</p><p>And I’ve not considered multiple conditions for exit, and I havn’t covered string handling (for which, to some extent, the CPU has instructions). But this is enough to get you going, and it has the techniques you need. Indeed, with <c>if</c> and <c>while</c> constructs, you have the basics of structured flow control.</p><hr/><p>Now, live in text, I loose patience. We’re going to do something which is not in tutorials and references (except maybe as a hint). It’s not a usual way of presenting assembly code. But I have some aims, such as keeping it simple, and making it readable. Take this up if you like. Add these,</p><pre><code>; Appends a null char to a string.
+;
+; @param s a string
+%define cString(s) s, 0
+
+
+; Conditionally on the rax register evaluates one of two blocks.
+;
+; @param 1 a x86 compare-to-jump type ('jne', 'jle' etc.) 
+; @param 2 a x86 some value to be compared to RAX. 
+%macro if_rax 2
+    %push ifrax
+    cmp rax, %2
+    %1 %$ifnot
+%endmacro
+
+%macro else 0
+    %ifctx ifrax 
+	    %repl elserax
+        jmp %$forward 
+        %$ifnot:
+    %else 
+        %error  "expected `if' before `else'" 
+    %endif 
+%endmacro
+
+%macro fi 0
+    %ifctx ifrax 
+        %$ifnot: 
+        %pop 
+    %elifctx elserax 
+        %$forward: 
+        %pop 
+    %else 
+        %error  "expected `if' or `else' before `endif'" 
+    %endif
+%endmacro
+
+
+; Evaluates a block repeatedly while rax comparison is false.
+;
+; @param 1 a x86 compare-to-jump type ('jne', 'jle' etc.) 
+; @param 2 a x86 some value to be compared to RCX. 
+%macro whileNotRax 2
+    %push wnrax
+    %$loop
+    cmp rax, %2
+    %1 %$forward
+%endmacro
+
+%macro endWhileNotRax 0
+    %ifctx wnrax 
+        jmp %$loop
+        %$forward: 
+        %pop 
+    %else 
+        %error  "expected `whileNotRax' before `endWhileNotRax'" 
+    %endif
+%endmacro
+
+; Evaluates a block repeatedly while rcx comparison is false.
+;
+; @param 1 a x86 compare-to-jump type ('jne', 'jle' etc.) 
+; @param 2 a x86 some value to be compared to RCX. 
+%macro whileNotRcx 2
+    %push wnrcx
+    %$loop
+    cmp rcx, %2
+    %1 %$forward
+%endmacro
+
+%macro endWhileNotRcx 0
+    %ifctx wnrcx 
+        jmp %$loop
+        %$forward: 
+        %pop 
+    %else 
+        %error  "expected `whileNotRcx' before `endWhileNotRcx'" 
+    %endif
+%endmacro</code></pre><p>I get sore looking at those ‘null’ terminators on strings, at gnomic duplicate instructions, at registers which muddy the code construction. Use the macros like this,</p><pre><code>   if_rax jne, 5
+        printlnStr trueMsg
+    else 
+        printlnStr falseMsg
+   fi
+
+   mov rcx,7	
+
+    whileNotRcx jle, 0
+        dec rcx
+        printlnInt rcx
+        endWhileNotRcx</code></pre><p>Again, these macros are going largely unexplained. Maybe if I reach an appendix?</p><p>The big surprise in this section is that, in assembly code, conditional execution looks nasty but is not that difficult (unless you get upset, write the macro then find something similar, but better, buried in NASM documentation).</p></article></body></html>

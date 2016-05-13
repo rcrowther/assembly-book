@@ -1,0 +1,49 @@
+<!DOCTYPE html><html><head><title>9_arithmetic</title><meta http-equiv="content-type" content="text/html; charset=UTF-8" /><link rel="stylesheet" type="text/css" media="screen" href="../lib/doc.css"/></head><body><article><h1>9 Arithmetic</h1><p>Until now, if you are a beginner, I’ve hauled you through some work which you may need to take at a pace—particularly macros. But now we have a test rig which can show us results, we can get down to opcodes.</p><p>Replace ‘main’ in the rig with this. It loads a number to ‘rax’ then subtracts a constant from it,</p><pre><code>main:
+    push rbp
+
+    mov rax, 7
+    add rax, 4
+    printlnInt rax
+
+    pop rbp
+    mov rax,0
+    ret</code></pre><p>Prints ‘11’? Good.</p><p>‘add’ works with negative constants too. Try with,</p><pre><code>    add rax, m:-4</code></pre><p>…and it will go minus,</p><pre><code>main:
+    push rbp
+
+    mov rax, 7
+    add rax, m:-21
+    printlnInt rax
+
+    pop rbp
+    mov rax,0
+    ret</code></pre><p>This also works with ‘sub’ (subtract) also. And with double negatives e.g.</p><pre><code>    mov rax, m:-7
+    sub rax, m:-21</code></pre><p>Should print ‘14’.</p><p>The tricky stuff starts with,</p><pre><code>SECTION .data
+    …
+    multiplier: dq 7
+
+
+SECTION .text
+    …
+    mov rax, 7
+    mul qword [multiplier]
+    printlnInt rax</code></pre><p>Why all the extra code (you ask)? Well, ‘mul’ will not accept a constant (sadly), only an address or register. Second, ‘dq’ (‘declaration of quad size numeric’) is not strictly necessary, but the multiplier should be ‘dq’ or it will be limited by the given size (for db, to 255). Finally, the compiler can not work out from the address what size the operation must be. For 64bit, it’s ‘qword’ (‘quadword’)</p><p>It’s a lot to remember.</p><p>Also, ‘mul’ is supposed to be an unsigned operation. However, it works with m:‧ Intel documentation,</p><blockquote><h5>4.2.1 Integers</h5><p>…</p><p>Some integer instructions (such as the ADD, SUB, PADDB, and PSUBB instructions) operate on either unsigned or signed integer operands</p></blockquote><p>Ok, division. Now, to judege from the shreds of online discussion, division is the biggest problem newcomers meet on x86 processors. What happens is the number to be divided is split across the DX:AX registers. This is divided by whatever is given to ‘div’. The result goes in AX, the remainder in DX.</p><p>What beats folks is that since the DX register is used too, it must be cleared, even for small numbers.</p><p>So it’s supposed to go like this,</p><pre><code>SECTION .data
+    …
+    divisor: dq 8
+
+
+SECTION .text
+    …
+    mov rdx, 0
+    mov rax, 12
+    div qword [divisor]
+    printlnInt rdx
+    printlnInt rax
+</code></pre><p>Easy to get “Floating point exception”.</p><p>Note carefully that the remainder is printed before the result. Otherwise the remainder is wrong, and clearly carrying garbage. More ‘printf’ interference???</p><p>Note also that in 64bit mode, ‘div’ handles sgns as well as ‘idiv’???</p><p>Finally. ‘div’ is very slow, can chew 20 clock cycles, so do not assume this machine code is naturally fast. Optimising‐crazy coders use tricks to avoid it. One solution is to approximate using bit‐shifts (often works fine for graphics). When I say bit‐shifts, I mean a shift right will divide by 2, and if you just need a graphic to move approximately or relatively, a division by 2.4,5 may be fine. Of course, we are a tutorial, so would never encourage optimisation‐based programming, which is for experts only. AMD Documentation, 32 bit instructions,</p><blockquote><pre>Instruction    Latency
+DIV            40
+IDIV           43
+ADD            4
+SUB            4
+IMUL           8
+IMUL (signed)  18
+SHR            4
+SHL            4</pre></blockquote><p>There are more accurate approximations too. GCC, for example, doesn’t use ‘div’—it has it’s own little custom sub‐function.</p><p>Well, that’s the end of basic arithmetic. It goes from the simple building brick of ‘add’ to the bad all‐ways code of ‘div’. In three letters. What next?</p></article></body></html>
