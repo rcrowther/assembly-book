@@ -69,9 +69,9 @@ The special operators __utf16__, __utf16le__, __utf16be__, __utf32__, __utf32le_
 
 I've not dug into it, but NASM must have supplementary code. x86 CPUs do not have Unicode instructions. 
 
-So, NASM (and YASM) have basics for creating Unicode. Fixed width Unicode, anyway. This has an obvious use---OS call parameters, like filepaths, can be in the form required.
+So, NASM (and YASM) has basics for creating Unicode. Fixed-width Unicode, anyway. This has an obvious use---OS call parameters, like filepaths, can be in the form required.
 
-Then again, it's not so good. Where's (the admittedly more difficult) UTF-8? And don't kid yourself this means you can use Unicode inside general assembly language coding. How will you print out? 
+Then again, not so good. Where's (the admittedly more difficult) UTF-8? And don't kid yourself this means you can use Unicode inside general assembly language coding. How will you print out? 
 
 The answer would be, use a library call. For Unicode printing. For example, import Glib and look for a wide string call.
 
@@ -80,7 +80,7 @@ The answer would be, use a library call. For Unicode printing. For example, impo
 If you've not used Unicode in C, it's a stringy tangle. It all makes sense and has standards and reason, but it's a stringy tangle. So,
 
 == Quick C coverage
-There are three ways to go, with different support. Official C,
+Three ways to go, with different support. Official C,
 
 +dd
 ~ Multibyte (character) string
@@ -95,22 +95,21 @@ By the by, standard C libraries can convert from locale encodings to fixed width
 
 
 
-Some libraries,
-++
++dl
 ~ Wikipedia on ''wide characters',
 : [a{https://en.wikipedia.org/wiki/Wide_character}]
 ~ Useful summary on C language (so C library) scenarios,
 : [a{http://www.cprogramming.com/tutorial/unicode.html}]
-~ Glib (not Glibc, which is a subset?) has UTF-8 support,
+~ Glib (not Glibc) has UTF-8 support,
 : [a{https://developer.gnome.org/glib/stable/glib-Unicode-Manipulation.html}]
-~ MicroUTF-8. Untried,
+~ MicroUTF-8 library. Untried,
 : [a{http://puszcza.gnu.org.ua/software/microutf8/}]
-~ UTF8Proc. Untried,
+~ UTF8Proc library. Untried,
 : [a{http://www.flexiguided.de/publications.utf8proc.en.html}]
 +
 
 == Print out Unicode
-NON-WORKING CODE
+TODO:NON-WORKING CODE
 
 
 http://stackoverflow.com/questions/18072130/print-out-unicode-characters-in-assembly-using-wprintf-linux-x86-64-platform
@@ -146,6 +145,6 @@ Bear in mind that Unicode is common nowadays. And UTF-8 is becoming a baseline, 
 
 Which is not to say there is not a place for 8-bit Latin/ASCII characters in many places. But, if the program is anything other than a utility, it may need internationalisation.
 
-The situation is C is a mess. And that's important because the C Standard Library would be the first way to go. But C options are the obscured, if minimal feature, ''multibyte string'; or to force a general locale and use ''wide string'. If you want to assure string encoding, you will need to get dirty with conversions through an ''iconv' library.
+The situation is C is a mess. And that's important because the C Standard Library would be the first way to go. But C options are the obscured ''multibyte string'; or to force a general locale and use ''wide string'. If you want to assure string encoding, you will need to get dirty with conversions through an ''iconv' library. The other way to look at this is to say what you have. NASM can generate the fixed-width types UTF-16 and UTF-32. But manipulating these using a C Library means forcing the locale. As for UTF-8, NASM cannot generate it, and the only way to manipulate is to use a supplementary library like Glib.
 
-As for the way to handle strings... if you import data from users as strings or, especially, trade with other post-Millennium code, use a library. If you need extensive string manipulation such as concatenation and building, use a library and heap allocation. Otherwise the question is, how much of this do you want to hand-code using raw integer stepping? In most cases, the only useful assembly-language implemented string code is a simple information printout.
+As for the implementation of strings... if you import data from users as strings or trade with other post-Millennium code, use a library. If you need extensive string manipulation such as concatenation and building, use a library and heap allocation. Otherwise the question is, how much of this do you want to hand-code using raw integer stepping? In most cases, the only useful assembly-language implemented string code is a simple information printout.

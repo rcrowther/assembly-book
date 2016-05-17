@@ -1,1 +1,106 @@
-/home/rob/Code/scala/TML/text/lib/doc.css
+*{
+-webkit-box-sizing: border-box;
+-moz-box-sizing: border-box;
+box-sizing: border-box;
+
+margin: 0;
+padding: 0;
+list-style-position: inside;
+}
+
+body{
+font-size: 14px;
+line-height: 21px;
+font-weight: normal;
+letter-spacing: 0.20px;
+font-family: georgia,serif;    
+}
+
+article {
+/*width: 600px;*/
+width: 500px;
+margin: 0 auto 21px auto;
+}
+
+h1 {
+font-size: 28px;
+line-height: 42px;
+margin: 84px 0 42px 0;
+}
+
+h2 {
+font-size: 21px;
+line-height: 28px;
+margin-top: 35px;
+}
+
+h3 {
+font-size: 14px;
+font-weight: bold;
+line-height: 21px;
+margin-top: 35px;
+}
+
+h4 {
+font-size: 14px;
+font-style: italic;
+line-height: 21px;
+margin-top: 35px;
+}
+
+h5 {
+font-size: 14px;
+line-height: 21px;
+margin-top: 35px;
+}
+
+pre {
+margin-top: 14px;
+padding-left: 7px;
+display: block;
+}
+
+ul, ol, dl {
+padding-left: 7px;
+margin-top: 14px;
+}
+
+p {
+margin-top: 14px;
+}
+
+dd{
+margin-top: 14px;
+padding-left: 7px;
+font-style: italic;
+}
+
+code {
+font-family: monospace;
+}
+
+blockquote {
+margin-top: 21px;
+padding: 0px 42px 7px 42px;
+}
+
+.page_img{
+width:450px;
+padding: 0 0 28px 0;
+}
+
+.text_right{
+text-align:right;
+}
+
+.action{
+margin: 21px 0;
+padding: 7px 21px;
+border-top: 1px dashed gray;
+border-bottom: 1px dashed gray;
+}
+
+.result{
+margin: 36px 0;
+padding-left: 21px;
+}

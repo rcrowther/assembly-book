@@ -6,14 +6,14 @@
 ++
 @ [a{1_intro.htm} Intro]
 @ [a{2_documentation.htm} Documentation]
-@ [a{3_the_tools_nasm_elf.htm} The tools---NASM and ELF]
+@ [a{3_the_tools_nasm_elf.htm} The tools-NASM and ELF]
 +
 
 == Part 2 Setup
 ++
 @ [a{4_nasm_coding_and_compiling.htm} NASM Coding and Compiling]
 @ [a{5_external_calls_printing.htm} External Calls and Printing]
-@ [a{6_a_rig_macros_vs_subprograms.htm} A Rig---macros vs. sub-programs]
+@ [a{6_a_rig_macros_vs_subprograms.htm} A Rig-macros vs. sub-programs]
 +
 
 == Part 3 Basics
