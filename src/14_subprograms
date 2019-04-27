@@ -30,13 +30,15 @@ The cost is about the same as the seperate instructions, so the instructions are
 
 Since the return address is on the stack, stack manipulations in a call block must be balanced.
 
-rsi is pushed explicitly. For some reason the macros pushAll and PopAll inside printlnStr do not work?
+The register that we need to protect for the ''print' macro is rsi. It is pushed and popped explicitly. We''ll discuss registers in a moment. 
 
 A few design decisions can be, or should be, made with functions.
 
-Terminology is muddled again, though not badly. Compiliers usually call some action which returns nothing a ''statement'. High-level languages often call a sub-program that returns nothing a ''function', while a sub-program that returns data is called a ''proceedure'. Diverging somewhat, a ''method' is a sub-program attached to some data by type, so assembly language rarely has methods.
+Terminology is muddled again, though not badly. Compiliers usually call some action which executes for effect, so returns nothing, a ''statement'. High-level languages often call a sub-program that returns nothing a ''function', while a sub-program that returns data is called a ''proceedure'. Diverging somewhat, a ''method' is a sub-program attached to some data by type, so assembly language rarely has methods.
 
-I don't want to call them sub-programs, so I'm pretty much sticking to the word ''function', unless the sub-program returns data.  
+I don't want to call them sub-programs, so I'm pretty much sticking to the word ''function'---unless the sub-program returns data.  
+
+
 
 == Preserving state
 As general rule, sub-programs should preserve the state of all registers they use. Register preservation tends to get ignored in example programs, as it complicates the code, and the code is the whole of the program. However, it means the example is not reusable.
@@ -50,9 +52,15 @@ pusha
 popa
 ? 
 
-This action works in all situations, but is inefficient, saving registers which may go unused. A comment I saw suggested the instruction was not upgraded to 64-bit for this reason. AThe instruction pair has uses, though, for debugging and to wrap extensive code.
+This action works in all situations, but is inefficient, saving registers which may go unused. A comment I saw suggested the instruction was not upgraded to 64-bit for this reason. The instruction pair has uses, though, for debugging and to wrap extensive code.
 
 In 64-bit, register saving needs to be done manually.
+
+
+++
+~ Discussion of the now unused ENTER/LEAVE opcodes explains also why PUSHALL/POPALL are unused,
+: [a{https://stackoverflow.com/questions/5858996/enter-and-leave-in-assembly}]
++
 
 === 64-bit and C calls
 In 64-bit, when C calls are made inside a sub-program, preservation of registers becomes more complex. C calls use several registers themselves.

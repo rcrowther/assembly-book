@@ -64,7 +64,9 @@ SECTION .text
     printlnInt rax
 ?
 
-Why all the extra code (you ask)? Well, ''mul' will not accept a constant (sadly), only an address or register. Second, ''dq' (''declaration of quad size numeric') is not strictly necessary, but the multiplier should be ''dq' or it will be limited by the given size (for db, to 255). Finally, the compiler can not work out from the address what size the operation must be. For 64bit, it's ''qword' (''quadword')
+Why all the extra code (you ask)? Well, ''mul' will not accept a quadword constant (sadly), only an address or register. There are shorter-bit length ''mul' and ''imul' instructions that will work as you hoped, but it was time to show you some of the syntax-bloat of assembly code.
+
+Second, ''dq' (''declaration of quad size numeric') is not strictly necessary, but the multiplier should be ''dq' or it will be limited by the given size (for db, to 255). Finally, the compiler can not work out from the address what size the operation must be. For 64bit, it's ''qword' (''quadword')
 
 It's a lot to remember.
 

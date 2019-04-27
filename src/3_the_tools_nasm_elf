@@ -55,9 +55,9 @@ ELF stands for Executable and Linkable Object Format. It's the main compiled fil
 
 Linkable means lots of little files can be made with unresolved symbols in them. You state a method, but there is no code available. But the making of an ELF does not complain. Then, with all the files gathered together, a linking program joins the symbols together and generates working code. 
 
-The two steps of compile/link are a serious usability issue in the work chain of making code. Most higher-level languages avoid them. But the two-step process has a few advantages, and they are big advantages. First, when making changes to code, unchanged files do not need to be recompiled---using the linker, they can be glued in for the new code. This is much faster. Second, files with accessible symbols can dropped into a system, for other code to use---they become a library.
+The two steps of compile/link are a serious usability issue in the work chain of making code. Most higher-level languages avoid them. But the two-step process has advantages, and they are big advantages. First, when making changes to code, unchanged files do not need to be recompiled---using the linker, they can be glued in for the new code. This is much faster. Second, files with accessible symbols can dropped into a system, for other code to use---they become a library.
 
-In a Linux/Unix system, ELf files appear in three forms,
+In a Linux/Unix system, ELF files appear in three forms,
 
 ++
 @ Shared object files (conventionally named .so)
@@ -68,32 +68,39 @@ In a Linux/Unix system, ELf files appear in three forms,
 === ELF in general
 ELF files have a header and segments.
 
-Segments are the elements ELF files use when they run, or are run. Segments may hold text, data, stacks etc. Segments contains one or more sections.
+Segments are the elements ELF files use when they run, or are run. Segments may hold text, data, stacks etc. Segments contains one or more sections. For the resons and names, see the section below.
 
 Assemblers like NASM can handle segments. This means they can, for example, generate output files handling a mix of 16-bit and 32-bit code.  In this tutorial we do not discuss segments (this is not about output formats). However, you may find the words popping up. Since the reference documentation is not clear about this, it's good to know the difference.
  
-ELF holds data and function code, both referenced by symbols. ELF keeps track of how big symbols are, whether they are weak, are they data or functions... that kind of information. 
+ELF holds data and functional code, both referenced by symbols. ELF software keeps track of how big symbols are, whether they are weak, are they data or functions... that kind of information. 
 
-=== ELF sections
-Each section has a seperate use. Each section has a distinct combination of flags (and these flags can be changed). To talk about the flag sets is too deep for us---see YASM documentation for a quick introduction.
+=== ELF segments and sections
+The ELF standard is clear, but in practice, this is confusing nomenclature.
+
+Segments are big groups of data used for running programs. In most of our code, there is usually only one big executable part, and a handful of support segments. They are referred to by a program header table. The headers describe where execution should start.
+
+Sections are smaller groups of data, within segments. These are used to tell linkers and libraries where to jump in. They are refered to in a section header table, which describes their position size, type etc.
 
 
-We will use sections. The standard ELF sections are,
+=== ELF segments
+Each segment has a seperate use. Each segment has a distinct combination of flags (and these flags can be changed). To talk about the flag sets is too deep for us---see YASM documentation for a quick introduction.
+
+Here and there, we will use segments. The standard ELF segments are,
 
 +dl
 ~ .bss
-: Runtime disc loaded, writable
+: Global/local static variables (uninitialized), read/write
 ~ .data
-: Runtime disc loaded
+: Global/local static variables, read/write
 ~ .rodata
-: Runtime disc loaded, writable
+: Global/local static constants, read
 ~ .text
-: Runtime disc loaded, executable
+: Code, read (on many architectures, no write)/execute
 ~ .comment
-: disc stored
+: As it says...
 +
 
-Don't fret... when we come to use this information, I'll repeat it.
+Many more segments are available in the ELF standard, for example .ldata, for 64bit data, and .got, for the symbol table (which is internal). We will not consider them, because we use tools that generate those segments automatically. You only need to know the segments above. Don't fret... when we come to use this information, I'll repeat it.
 
 
 === Looking at ELF files
@@ -114,6 +121,8 @@ The output is informative. Some may say, scary. Let's stick with informative.
 ++
 ~ Wikipedia on ELF format,
 : [a{https://en.wikipedia.org/wiki/Executable_and_Linkable_Format}]
+~ ELF AMD54 standard,
+: [a{http://refspecs.linuxbase.org/elf/x86_64-abi-0.99.pdf}]
 +
 
 == GCC, the linker
