@@ -45,13 +45,13 @@ Assembly language uses some old/low-level computing word for bit sizes. This can
 
 +dd
 ~ BYTE
-: 8-bit
+: 8-bit, 1 byte, 1--256, 0xff
 ~ WORD
-: (following Microsoft fix) 16-bit
+: (following Microsoft fix) 16-bit, 2 byte, 1--65536, 0xffff
 ~ DWORD
-: double natural size, 32-bit
+: double natural size, 32-bit, 4 byte, 1--4294,967,296, 0xffffffff
 ~ QWORD
-: quad natural size, 64-bit
+: quad natural size, 64-bit, 8 byte, 1--[very large!], 0xffffffff,ffffffff
 +
 
 It helps to learn these. Or, at least, the one for the bit size of your own computer.
