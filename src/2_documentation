@@ -46,6 +46,9 @@ Most of the so-called tutorials on the web, the only effective ones, are materia
 == Tutorial references
 +dd
 
+~  The only sustained tutorial I've found. 32Bit only,
+: [a{https://www.tutorialspoint.com/assembly_programming/assembly_memory_segments.htm}]
+
 ~ ''The Art of Assembly Language', a book available online or in print, which backs a university course. Sounds promising, but uses it's own language ''HLA', which makes it largely useless. Helpful detail on memory organisation,
 : [a{http://www.plantation-productions.com/Webster/www.artofasm.com/index.html}]
 
@@ -92,5 +95,4 @@ Not every link in the text is here, but generally interesting links from individ
 +dd
 ~ Newish (2013) assembly language IDE. QT desktop,
 : [a{http://dman95.github.io/SASM/english.html}]
-
 +

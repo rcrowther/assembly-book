@@ -1,0 +1,146 @@
+= 4.5 System calls
+This section introduces what may be seen as a more advanced topic. And, at that, the topic is of iimited use. However, it introduces many useful points immdiately.
+
+On any given machine, assembly code can call ''the system'. This means making requests to the operating system. In our case, the operarating system is Linux. Linux is many systems, but these systems have a common kernel, so this code will (mostly, see the warning) work across machines.
+
+Calling system code is an activity that, finally, you only do rarely. See the next chapter for how we would call a ''C' library, which is a much more flexible and extended approach to generate useful code. But you will use system calls now and then, and it introduces the idea of call conventions.
+
+== A loose warning
+I should point out too---which is never mentioned in any machine code references I have seen---that directly calling the operating system is not a great idea. Ever since UNIX, operating systems have been constucted in layers, for protection and to establish APIs. Running from the desktop to the outer edges of the kernel is something of a what computer folks call, with their exaggerated language, a ''violation'. You may have a legitimate reason for system calls---you are constructing a super-efficient kernel module. But if you are here you are larking about, or delving. 
+
+You'll get a lot more cross-platform stability by using a library. By cross-platform I mean even across versions of Linux for a given architecture. Which we will cover in the next chapter.
+
+
+=== Calling conventions
+The way to call another library is called a ''convention'. Because how to call has never been agreed, and may depend on the type of the computer (the ''architecture'), to some extent the operating system, and the library used. But how to get CPU instructions calling compiled libraries is a fundamental piece of computer programming. Who wants to work with a computer which can only run entirely stand-alone compiled programs? Without involving the operating system, you will never get an independant printout, interact with a printer---all kinds of device drivers---or the screen.  So calling conventions have standards attached to them anyway. 
+
+
+=== Passing parameters
+Right, if you were looking at this conceptually, you may be asking, ""How do we get parameters into a system function, when no parameters are available and what we seem able to do is hold values and jump around?" (I could have started by calling functions with no parameters, but that's no fun).
+
+The answer is, we push the values onto the stack or into registers. Then we call the system. As we have said, where the parameters go depends on the processor and the external code called---in this case, the Linux kernel.
+
+On x64 Linux the system calling convention is not unlike the ''C' calling convention. In order, we use,
+
+++
+~ RAX
+: Code for the system call to be used
+~ rdi
+~ rsi
+~ rdx
+~ r10
+~ r8
++ 
+
+Not all the parameters need to be used.
+
+
+== Structure of a syscall
+=== x64
+Move the code onto RAX, add any parameters, then the Intel architecure has a special code, ''syscall'
+
+?cb
+mov	rax, 42		; system call number (sys_exit)
+syscall		; call kernel
+?
+
+=== x32
+Move the code onto EAX, push any parameters to the stack (the call convention for 32 architectures), then call an interrupt with parameter 0x80,
+
+?cb
+mov	eax, 42		; system call number (sys_exit)
+int	0x80		; call kernel
+?
+
+
+== Where do I find out about syscodes?
+
+The classic reply is to look in 
+
+?cb
+/usr/include/asm/unistd.h 
+?
+
+or maybe,
+
+?cb
+/usr/include/unistd.h
+?
+
+This is not reliable. On Debian machines, you (currently) are looking for,
+
+?cb
+/usr/include/x86_64-linux-gnu/asm/unistd_64.h 
+?
+
+Or you could go to source, currently,
+
+[a{https://github.com/torvalds/linux/blob/master/arch/x86/entry/syscalls/syscall_64.tbl}]
+
+But that will not tell you the form of the call---parameters and types. Niether is there a reliable way if finding these. I suggest you search for your architecture online, and hope someone has put the information online.
+
+== x64 
+Read a string while print prompts then manually exit (NASM always constructs a clean exit, but here we do that manually),
+
+?cb
+BITS 64
+DEFAULT REL
+
+section	.data
+    userPrompt db 'Please enter a number: ' ;Ask the user to enter a number
+    lenUserPrompt equ $-userPrompt    ;length of the message
+    msg db 'Hello, world!', 0xa ;string to be printed
+    len equ $ - msg             ;length of the string
+
+section .bss           ;Uninitialized data
+    num resb 9
+        
+section	.text
+    global main
+	
+main:
+    ;prompt
+    mov	rax, 1      ;system call number (sys_write)
+    mov	rdi, 1      ;file descriptor (stdout)
+    mov	rsi, userPrompt     ;message to write
+    mov	rdx, lenUserPrompt  ;message length
+    syscall
+    
+    ;Read and store the user input
+    mov rax, 0      ;system call number (sys_read)
+    mov rdi, 2      ;file descriptor
+    mov rsi, num  
+    mov rdx, 9      ;5 bytes (numeric, 1 for sign) of that information
+    syscall
+   
+    ;mov qword[num], 62
+   
+    ;Output the number entered
+    mov rax, 1      ;system call number (sys_write)
+    mov	rdi, 1      ;file descriptor (stdout)
+    mov rsi, num
+    mov rdx, 5      ;5 bytes (numeric, 1 for sign)
+    syscall
+    
+    ;Output the message
+    mov	rax, 1      ;system call number (sys_write)
+    mov	rdi, 1      ;file descriptor (stdout)
+    mov	rsi, msg    ;message to write
+    mov	rdx, len    ;message length
+    syscall
+    
+    mov	rax, 60     ;system call number (sys_exit)
+    mov	rdi, 42     ;system call number return
+    syscall
+?  
+
+As there are no libraies, we could use the Linux linker directly, but we use GCC,
+
+?cb
+> nasm -f elf64 -F stabs  hw.asm
+> gcc -Wall -fPIC -o hw  hw.o
+> ./hw
+?
+
+
+You can find a lot more on the web about using assembly code to run syscalls, but we leave the subject now.

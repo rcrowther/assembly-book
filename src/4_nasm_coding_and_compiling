@@ -168,6 +168,44 @@ or,
 
 Note how a full 'gcc' statement is required for 64-bit.
 
+=== ld vs. GCC
+You can use the Linux linker or GCC, the full ''c' compiler. The full compiler has the advantage of including a ''c' library, which we will use later. The linker alone is faster, especially for simple files.
+
+==== Relative positioning
+GCC likes relative positioning of adresses. This can be done in NASM by adding this to the top of assembly code files,
+
+?cb
+DEFAULT REL
+?
+
+==== Name of entry point
+The two tools expect to find different names for symbols inside the files. The linker,
+
+?cb
+> ld -m elf_x86_64 -s -o hw.out hw.o
+?
+
+expects to find,
+
+?cb
+global _start
+_start:
+?
+
+GCC is a ''c' compiler, 
+
+?cb
+> gcc -Wall -o hw.out  hw.o
+?
+
+so expects to find a ''main',
+
+?cb
+global main
+main:
+?
+
+Either tool will blurt errors if the name of the main entry point for execultion is not what they expect.
 
 
 == Run the program
@@ -182,7 +220,7 @@ Result! Run ''hw',
 
 Nothing happens. 
 
-But at least it did not fail (well, if you got this far, I guess not). And it compiled super-fast, and is very small.
+But at least it did not fail (well, if you got this far, I guess not). And it compiled fast, and is small.
 
 
 

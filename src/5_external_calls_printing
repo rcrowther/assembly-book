@@ -1,10 +1,12 @@
 
 = 5 External calls and printing
-This section is here because it stands alone. If you prefer, you can skim this section then, when you need to understand, come back. 
+This section is here because it helps us along. If you prefer, you can skim this section then, when you need to understand, come back. 
 
 Throughout these posts we are going to use a basic code setup---a rig. This rig will enable us to paste code in without worrying about setup, and print result values (and will include a few more chunks of code to help move the posts along). Well, we start the rig here.
 
-Assembly language has little concern for printing. The web makes a big show, in ''Hello World' examples, of printing using system interrupts. We would like something faster to code and more comprehensive, so the rig will print using the C Standard Library. So we can talk about how to call external code. Later, we cover other details about external calling, but this post will bring results.
+Yo can not print or display from assembly language. The web makes a big show, in ''Hello World' examples, of printing using system calls---a call to the kernel of the operating system. We covered this in the last section. System calls, finally, are a lot of work. A system call depends on the machine you are using. These calls are raw. At best, a system call can print a number in a register to a terminal. For strings, a system call can maybe print out a buffer, which you must construct, and probably supply the length. There is no handling of type, as types do not exist, and no concept of ''print any of these' (''polymorphism'), or ''print all of these' (''vargs').
+
+We would like something faster to code and more comprehensive, so the rig will print using the C Standard Library. So we will talk about how to call external code. Later, we cover other details about external calling, but this post will bring results.
 
 
 == Using other libraries
@@ -12,10 +14,11 @@ The ''Hello world' code on the web tends to use a direct system call to Linux. T
 
 But we will use the C Standard Library. One reason is because object file symbols need to be linked to the library contents. This can, in some setups, be a difficult and troublesome process. But with the Linux linker, or ''gcc', it is fairly easy. ''gcc' has a C library builtin. Hurrah! No need for complex command lines! And the C library provides methods we need, and has been heavily developed. For a tutorial, that's ok.
 
+
 == Calling sub-programs in libraries
 
 === Calling conventions
-The way to call another library is called a ''convention'. Because how to call was never agreed, and depends on the type of the computer (the ''architecture'), to some extent the operating system, and the library used. But how to get CPU instructions calling compiled libraries is a fundamental piece of computer programming. Who wants to work with a computer which can only run entirely stand-alone compiled programs? So calling conventions have standards attached to them anyway.
+We covered this subject in the syscalls chapter---if you skipped it, go back one. Below, we cover how this varies for calling ''c' code libraries.
 
 ++
 ~ Official C API conventions, on Github,
@@ -43,7 +46,6 @@ I said we will take easy routes, we are using ELF files, so no fancy function na
 
 
 === Passing parameters
-
 Right, if you were looking at this conceptually, you may be asking, ""How do we get parameters into a function, when no parameters are available and we simply jump around?" (I could have started by calling functions with no parameters, but that's no fun).
 
 For 16-bit and 32-bit, we push on the stack. Then call the function. The conventions say that the called code then looks at the stack to see parameters. NASM documentation,
@@ -135,8 +137,6 @@ main:
 
 There's a lot going on here. Try it first, check it works.
 
-
-
 The ''printf' call is tagged in using the ''extern printf' command. ''extern' means ''no code here now, if used will be provided later through a linker'. And then we linked using ''gcc', which includes the library, so the code was found, and the executable could be made.
 
 The ''strToPrint' and ''fmt' marks attach labels to data definitions. I put them there so you could see this working. If you don't fully get it right now---and I agree I have not explained much---don't worry. They are there to give us something to work with. We'll cover data definitions later.
@@ -161,11 +161,6 @@ The callee receives control, and typically (although this is not actually necess
 Writing as algorithm... 
 
 You don't need to understand this now. We'll cover the idea fully later. But in short---the assembly program ''main' stashes the base pointer because programs love to mess round with it. ''printf' itself probably messes round with the pointer---we hope it restores it too. But hark at this --- if we remove the restoration, the programs throw a segfault. That's because ???. 
-
-
-
-
-
 
 == Charms
 Ok, we covered a lot of ground. And a lot of that ground was warnings and charms. That's machine code for you. But we do have a library call, and a working printout.
