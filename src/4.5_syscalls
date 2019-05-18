@@ -1,13 +1,16 @@
 = 4.5 System calls
-This section introduces what may be seen as a more advanced topic. And, at that, the topic is of iimited use. However, it introduces many useful points immdiately.
+This section introduces what may be seen as a more advanced topic. And, at that, the topic is of iimited use. However, it introduces useful points immdiately.
 
 On any given machine, assembly code can call ''the system'. This means making requests to the operating system. In our case, the operarating system is Linux. Linux is many systems, but these systems have a common kernel, so this code will (mostly, see the warning) work across machines.
 
 Calling system code is an activity that, finally, you only do rarely. See the next chapter for how we would call a ''C' library, which is a much more flexible and extended approach to generate useful code. But you will use system calls now and then, and it introduces the idea of call conventions.
 
-== A loose warning
-I should point out too---which is never mentioned in any machine code references I have seen---that directly calling the operating system is not a great idea. Ever since UNIX, operating systems have been constucted in layers, for protection and to establish APIs. Running from the desktop to the outer edges of the kernel is something of a what computer folks call, with their exaggerated language, a ''violation'. You may have a legitimate reason for system calls---you are constructing a super-efficient kernel module. But if you are here you are larking about, or delving. 
+== A loose warning---syscalls are delving
+I should point out---which is never mentioned in any machine code references I have seen---that directly calling the operating system is not a great idea. Ever since UNIX, operating systems have been constructed in layers, for protection and to establish APIs. Running from the desktop to the outer edges of the kernel is something of a what computer folks call, with their exaggerated language, a ''violation'. You may have a legitimate reason for system calls---you are constructing a super-efficient kernel module. But if you are here you are larking about, or delving. 
 
+== A second warning---syscalls have an inconsisten API
+Changes in a syscall API are as critical as those to micropreocessor instunctions---they must be understood and reflected in all compilers. So the syscall API doesn't change iften. But it is not guarenteed, either. There is no common standard, it varies across operating systems, and sometimes changes are made wuthin an operatings system too.
+  
 You'll get a lot more cross-platform stability by using a library. By cross-platform I mean even across versions of Linux for a given architecture. Which we will cover in the next chapter.
 
 
@@ -23,7 +26,7 @@ The answer is, we push the values onto the stack or into registers. Then we call
 On x64 Linux the system calling convention is not unlike the ''C' calling convention. In order, we use,
 
 ++
-~ RAX
+~ rax
 : Code for the system call to be used
 ~ rdi
 ~ rsi
@@ -32,7 +35,11 @@ On x64 Linux the system calling convention is not unlike the ''C' calling conven
 ~ r8
 + 
 
+
+
 Not all the parameters need to be used.
+
+
 
 
 == Structure of a syscall
@@ -43,6 +50,9 @@ Move the code onto RAX, add any parameters, then the Intel architecure has a spe
 mov	rax, 42		; system call number (sys_exit)
 syscall		; call kernel
 ?
+
+The x32 version can be used on x64, but is slower. ''syscall' is faster as it preloads it's return position to the operationg system. On the other hand, to do this, the x64-only ''syscall' clobbers rcx and r11.
+
 
 === x32
 Move the code onto EAX, push any parameters to the stack (the call convention for 32 architectures), then call an interrupt with parameter 0x80,
@@ -78,6 +88,49 @@ Or you could go to source, currently,
 [a{https://github.com/torvalds/linux/blob/master/arch/x86/entry/syscalls/syscall_64.tbl}]
 
 But that will not tell you the form of the call---parameters and types. Niether is there a reliable way if finding these. I suggest you search for your architecture online, and hope someone has put the information online.
+
++dd
+~ All you need to know about how to make syscalls---more than you may expect,
+: [a{https://blog.packagecloud.io/eng/2016/04/05/the-definitive-guide-to-linux-system-calls/#64-bit-fast-system-calls}]
++
+
+== What can I do with syscalls?
+If you are ok with what they mean, you could look at the lists referred to above. For everyone else...
+ 
+Al lot of very low level activity to push and manipulate data round the operating system. These are some sexamples, chosen only to show the range (currently, there are about 500 syscalls in Linux)
+
+++
+- mmap
+~ Open an area of virtual memory, possibly with on-demand loading from dic files. Can be used for sharing file resources between processes, or communicating between applications.
+- fork
+~ Duplicate a process (full application). The duplicate runs seperately to the parent process.
+: chdir
+~ Change the working directory (the one assumed by the operating system if paths do not refer to root)
+: clock_gettime
+~ Can get the internal clock (and other clocks) time 
+: move_pages
+~ Move the pages of a process to new places
++
+
+Ypu get the drift? File operations, process operations, networking, memory management, that kind of low level operating system activity.
+
+You may have seen a lot of commands you can use from the commandline, that seem to be present in some low-computer code---''c' code, especially. Likely, these are wraps of syscalls.
+
+== Concection to POSIX and Glibc
+POSIX is a standard to unify UNIXes. It has a lot to say about syscalls. The standard also extended ''c', particularly in the area of syscalls. Many linux syscalls are provided to match the POSIX standard.
+
+Glibc is a programming library sometimes described like this,
+>>
+glibc, which in many cases just provides a shallow wrapper to system calls.
+>
+That's true in some ways. But ''c' is a programming language, and it's conveniences sometimes override this. ''printf' is far more potent than a simple syscall (though I suppose Glibc's ''write' is closer).
+
+Also worth noting is that Glibc is a GNU initiative. It's implementattion of standards like POSIX sometimes drives kernel development---not, as you may have fancied, the other way round.
+
++dd
+~ Glibc. ''C' library that acesses the operating sytem core,  
+: [a{https://www.gnu.org/software/libc/manual/}]
++
 
 == x64 
 Read a string while print prompts then manually exit (NASM always constructs a clean exit, but here we do that manually),
@@ -134,7 +187,7 @@ main:
     syscall
 ?  
 
-As there are no libraies, we could use the Linux linker directly, but we use GCC,
+As there are no libraries, we could use the Linux linker directly, but we use GCC,
 
 ?cb
 > nasm -f elf64 -F stabs  hw.asm
@@ -144,3 +197,7 @@ As there are no libraies, we could use the Linux linker directly, but we use GCC
 
 
 You can find a lot more on the web about using assembly code to run syscalls, but we leave the subject now.
+
+
+
+

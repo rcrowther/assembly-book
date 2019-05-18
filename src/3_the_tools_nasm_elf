@@ -123,6 +123,8 @@ The output is informative. Some may say, scary. Let's stick with informative.
 : [a{https://en.wikipedia.org/wiki/Executable_and_Linkable_Format}]
 ~ ELF AMD54 standard,
 : [a{http://refspecs.linuxbase.org/elf/x86_64-abi-0.99.pdf}]
+~ 44 pages on shared libraries, covers a lot of ground about linkage, relocation etc.
+: [a{https://akkadia.org/drepper/dsohowto.pdff}]
 +
 
 == GCC, the linker

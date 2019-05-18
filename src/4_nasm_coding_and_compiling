@@ -172,11 +172,47 @@ Note how a full 'gcc' statement is required for 64-bit.
 You can use the Linux linker or GCC, the full ''c' compiler. The full compiler has the advantage of including a ''c' library, which we will use later. The linker alone is faster, especially for simple files.
 
 ==== Relative positioning
-GCC likes relative positioning of adresses. This can be done in NASM by adding this to the top of assembly code files,
+Relative positioning and abosolute position referrs to addresses. It's often referred to as PIC (Position Independant Code) or PIE (Position independant Executable). 
+
+It's a difference between an executable file, which can say, load me here, and a shared file, which says, load me anyplace, call me.
+
+So now you ask, how can all programs be loaded in the same place (non-PIC)? Well, this problem rose years ago, with the appearence of multi-tasking computers. Simple, the program loaders do ''Load-time relocation'---they wrewwrite the program for somewhere else. Nowadays, PIC code is preferred. 
+
+Anyway, the toolchain is messy on this point, and will remain so for a long time.
+
+GCC, especially from Debian repositories, is set up to do PIC. You can stop it with the option ''-no-pie'. Or be sure using ''-pie'
+
+But NASM still likes absolute addresses. You can switch this by adding this to the top of assembly code files,
 
 ?cb
 DEFAULT REL
 ?
+
+PIC uses a Global Offset Tables (GOTs) to work out the actual position of code. It's a little slower than absolute code, in some cases.
+
+??? So far not found any good refeerence on writing foir PIE
+Some considerations with PIC,
+++
+- ebx will be clobbered
+: It's used for the offset calculations
+- It uses a different coding style
+: The LEA opcode, which returns the address, not dereferenced, becomes much more important
+- Library calls must be done from the offset table,
+: e.g. fprint wrt ..plt
++
+
+
+
+
++dd
+~ Wikipedia on Position Independant Code,
+: [https://en.wikipedia.org/wiki/Position-independent_code}]
+~ Overall neat description,
+:{[https://eli.thegreenplace.net/2011/11/03/position-independent-code-pic-in-shared-libraries/}]
+~ Brief GCC notes on PIC,
+: [{http://linux4u.jinr.ru/usoft/WWW/www_debian.org/Documentation/elf/node21.html}]
++
+
 
 ==== Name of entry point
 The two tools expect to find different names for symbols inside the files. The linker,
