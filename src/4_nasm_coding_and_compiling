@@ -73,6 +73,8 @@ SECTION .text
 
 global main
 main:
+
+   mov rax,42
    ret
 ?
 
@@ -97,7 +99,7 @@ SECTION .text
 global main
 main:
 
-   mov rax,0
+   mov rax,42
    ret
 ?
 
@@ -170,6 +172,22 @@ Note how a full 'gcc' statement is required for 64-bit.
 
 === ld vs. GCC
 You can use the Linux linker or GCC, the full ''c' compiler. The full compiler has the advantage of including a ''c' library, which we will use later. The linker alone is faster, especially for simple files.
+
+=== But it did nothing!
+Hopefully, you got an output file, ''hw'. You can now,
+
+?cb
+./hw
+?
+
+It does nothing. Someday, you will realise how wonderful this is. No errors, nothing. But right now you are unimpressed. Actually, it does something. Try,
+
+?cb
+./hw; echo $?
+?
+
+The code did nothing (visible, substantial) then returned the number ''42'.
+
 
 ==== Relative positioning
 Relative positioning and abosolute position referrs to addresses. It's often referred to as PIC (Position Independant Code) or PIE (Position independant Executable). 

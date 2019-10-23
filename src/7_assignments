@@ -42,7 +42,7 @@ So,
 === Sizing
 So what are these funny size marks?
 
-Once upon a time there was a ''byte'. Computers used it. Then the byte had to get longer. Meanwhile, there was a ''word', which was the ''natural' bus size of a computer. But then Microsoft decided this was getting silly and confusing, so they set ''word' to 16-bits. Microsoft were not alone, dealing with strings, C decided smallest adressable size (usually 8-bit) would be a ''char', and threw in ''t_size'. Java made a effort to straighten this out, finalizing a system which is not compatible with anyone else.
+Once upon a time there was a ''byte'. Computers used it. Then the byte had to get longer. Meanwhile, there was a ''word', which was the ''natural' bus size of a computer. But then Microsoft decided this was getting silly and confusing, so they set ''word' to 16-bits. Microsoft were not alone, dealing with strings, C decided smallest addressable size (usually 8-bit) would be a ''char', and threw in ''t_size'. Java made a effort to straighten this out, finalizing a system which is not compatible with anyone else.
 
 In NASM,
 

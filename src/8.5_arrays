@@ -1,0 +1,131 @@
+= 8.5 Arrays
+
+There is an argument that arrays are the simplest compound data structure in computing. An array is a sequence of data of similar type (in fairness, what the C programming language calls the ''struct', a one-off or replicable clutch of non-similar typed data, may have a similar claim---we'll deal with that structure in [a{19_small_data_collections} 19 Small Data Collections]). 
+
+In the last section, we covered the use of addresses, or ''pointers', for accessing data. This introduced, by accident, the idea of arrays. But let's cover arrays explicitly. The first thought may be that handling arrays in assembly should be easy enough, as we have seen the constructs and how to access them. That is true... kind of... some of the time...
+
+
+== Creating an array
+Easy! Maybe. Reserve a twelve item 64bit (quadword, 8bytes) length of array. Modifiable, and capable of being initialised,
+
+?cb 
+SECTION .data
+    arrayTest: dq 12
+?
+
+Wait a minute. Remember the discussion about the purpose of sections in an executable file? Same array reservation, but unwritable/immutable (should be initialised with something),
+
+?cb 
+SECTION .rodata
+    arrayTest: dq 12
+?
+
+Same array reservation, but initialised to 0,
+?cb 
+SECTION .bss
+    arrayTest: dq 12
+?
+
+And we're not done yet. It is possible to stash an array on the stack, but I won't cover that---it is a temporary measure (do it by changing the base pointer, as in creating a stack frame). However, if you had a cLib on board, you may consider using it's heap area. A heap area, recall, is a patch of memory used to stash data which is able to allocate and release areas. Using a cLib,
+
+?cb 
+
+extern malloc
+...
+
+
+SECTION .bss
+    # resq is uninitialized quadspace of 1 (8 bytes)
+    arrayTest: resq 1
+
+SECTION .text
+    mov rdi, 96
+    call malloc
+    # return is on...
+    mov arrayTest, ???
+...
+    # once finished
+    mov rdi, arrayTest
+    call free
+?
+
+The ''extern' and ''mov' to rdi are needed because this is an external call to C code. The size is 12*8 because ''malloc' needs a size in bytes. The return from the C code can not be left to the compiler as a label, so is stashed on a variable ''arrayTest'.
+
+Gosh.
+
+The following applies to both the arrays created directly in assembly, so using a label, and the arrays created using a cLib heap.
+ 
+== Setting array elements
+ the label points to the address of the first item in memory. This is very like the action used in C and C++, but in no other computer language.
+
+So let's set the third index to 55. Comparable code in C,
+
+?cb 
+    long arrayOfLong[5]={7,13,3,88,9}; 
+    long *ptr=arrayOfLong; 
+    // C can figure out this is the third ''long', because it's a ''long' type pointer
+    ptr=ptr+3;
+    // ''dereference'/''access' the pointer
+    *ptr=55;
+?
+
+
+With a stunning lack of intuition, assembly languages need to be told the size of data set. They also need the position to be given in bytes.
+ 
+?cb 
+SECTION .text
+    mov rax, 55
+    mov qword[arrayTest+12*8], rax
+?
+
+
+== Retrieving from arrays
+So let's retrieve the third index. Comparable code in C,
+
+?cb 
+    long arrayOfLong[5]={7,13,3,88,9}; 
+    long *ptr=arrayOfLong; 
+    // C can figure out this is the third ''long', because it's a ''long' type pointer
+    // ''dereference'/''access' the pointer
+    long result=*(ptr+3);
+?
+
+Same lack of intuition, assembly languages need to be told the size of data set. They also need the position to be given in bytes,
+ 
+?cb 
+SECTION .text
+    mov rax, qword[arrayTest+12*8]
+?
+
+== Mutating an element
+Defying high level programming practice, this is a little expensive (three clock cycles), but is at least a match for retrieval and rewrite (???is it atomic),
+
+?cb 
+SECTION .text
+    inc qword[arrayTest+12*8]
+?
+
+Hey, you know what? Let's get a bit groovy and give you...
+
+== Contains
+
+== (kind of...) Foreach
+
+== Slice
+
+Sort? I leave that to you. Remember, these kind of utilities are why libraries exist.
+
+== Ack!
+You may think that the ''malloc' use of bytes is bad. Then you see the way assembly language can not step arrays or cast data. It's pretty low-down. You're probably in assembly language for the detailed instructions and low access, not to go byte-counting. 
+
+The probable reason malloc uses bytes is because it would otherwise need different functions for each type, which is not robust for the future and would add a layer to the code. And assembly languages have near no concept of type, which would add complexity to them too. It's a price you pay.
+
+Also, you may now be wondering, ""Why use pointers?". They are wide-open to error, and in assembly language a pain to program. The only view seems to be that in assembly language pointers are the only option, as there are no dereferencing options.
+
+Well, there are one or two good reasons for pointers. Mutating data structures are not popular nowadays, as they have difficult-to-trace effects and become near-unpredictable in thread interactions. But if you only are ever using one instance of an object, mutability is space-efficient. It is also fast and clear. What if you update the header on a file going back out to disk, or changing pixels via a filter on a stream of images? KISS.  
+
+=== Ref
+Pretty helpful,
+
+[a(https://www.cs.uaf.edu/courses/cs301/2014-fall/notes/memory/) Memory allocation in C and Assembbler]
+

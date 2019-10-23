@@ -2,7 +2,7 @@
 
 The place where data is, the ''address', is used a lot in machine code. I sneaked this in to get the rig working. The idea also appeared in the previous chapter, because variable declarations create an address---the ''d(x)' declarations.
 
-To some extent, I sneaked because I'll not be writing a big section on ''What is an address/pointer?' I think I have to assume you have some idea. After all, there's information to cover which is specific to assembly language. If you do need to know, try a beginners guide to C (beats the encyclopedic Wikipedia entry on [a{https://en.wikipedia.org/wiki/Pointer_%28computer_programming%29} Pointers]).
+To some extent, I sneaked because I'll not be writing a big section on ''What is an address/pointer?' I think I have to assume you have some idea.(???reconsider, this section now exists). After all, there's information to cover which is specific to assembly language. If you do need to know, try a beginners guide to C (beats the encyclopedic Wikipedia entry on [a{https://en.wikipedia.org/wiki/Pointer_%28computer_programming%29} Pointers]).
 
 
 == Address/Pointer types
@@ -45,13 +45,13 @@ To modify values at an address, use square brackets (this is not unlike the nota
 
 ?cb 
 SECTION .data
-    a: dq 97
+    arrayTest: dq 97
 
 SECTION .text
   mov qword[a], 99
     printChar 'a'
     printIs
-    printlnChar [a]
+    printlnChar [arrayTest]
 ?
 
 Should return,
@@ -166,7 +166,7 @@ The low byte (bits 0 through 7) of each data type occupies the lowest address in
 
 In other words, when you add a label to a piece of long memory, the label points to the address of the first byte. This is what you want, because that's what the CPU instructions use (they then step along the bytes, processing them).
 
-You can step along the bytes yourself, manully--""Get me quadword number 7". In other words, an array.
+You can step along the bytes yourself, manually--""Get me quadword number 7". In other words, an array.
 
 === Syntax
 NASM documentation makes a play that NASM handling of relative addresses is, compared to TASM and MASM, a simple system. YASM documentation (based in NASM with useful additions) talks about ''Effective addresses'. Personally, I find the descriptions, while historically vital, confused. Are they talking about addresses (references), or getting contents (de-referencing)? The descriptions further seem contradictory---is an ''memory address' getting an address or contents?

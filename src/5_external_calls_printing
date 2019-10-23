@@ -14,6 +14,13 @@ The ''Hello world' code on the web tends to use a direct system call to Linux. T
 
 But we will use the C Standard Library. One reason is because object file symbols need to be linked to the library contents. This can, in some setups, be a difficult and troublesome process. But with the Linux linker, or ''gcc', it is fairly easy. ''gcc' has a C library builtin. Hurrah! No need for complex command lines! And the C library provides methods we need, and has been heavily developed. For a tutorial, that's ok.
 
+You may ask, what is included in a C library? This is a C standard library, and includes all the bits and bobs you might need. Header groups you may see individually in C programs, like ''string.h' or ''stdio.h', are all available.
+
+
+=== Ref 
+Wikipedia,
+[a(https://en.wikipedia.org/wiki/C_standard_library) ]
+
 
 == Calling sub-programs in libraries
 
@@ -42,7 +49,22 @@ Ah. We are using the ELF output format. So guess what? ELF does not require the 
 
 I said we will take easy routes, we are using ELF files, so no fancy function naming for us. However, someday you may be glad if you remember this note.
 
+=== Importing the name
+Same as in C, you need to declare the function is found externally, not in the file. So,
 
+?cb
+    extern printf
+? 
+at the top of your assembly file.
+
+==== Over a whole C standard library? Insane!
+You get me? A standard cLib includes thousands of functions. We have a compiler linking them all in, potentially. No namespacing, no conditional import? The possibility of name clash is very high.
+
+That's right.
+
+Also, far as I know, you will need to declare by ''extern' every external function you use individually, no group import???
+
+Insane. Or excercise by writer of extreme control.
 
 
 === Passing parameters
@@ -75,6 +97,10 @@ Oh, see, the first few parameters are passed through the registers. In conventio
 
 This difference in parameter passing to external functions is our first reason why 64-bit assembly code, for x86 processors, is notably different to 32-bit code.
 
+=== Returns
+Plenty of code will return useful code, not send it. To be blunt, 64-bit returns in ''rax'.
+
+More to it than that, but that will do.
 
 == Printing out
 The C library ''printf' command takes several parameters, starting with a format string. In C, the code we will write looks like,
