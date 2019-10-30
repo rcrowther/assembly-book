@@ -135,8 +135,6 @@ As the bit size of the Intel x86 chips (and the AMD chips which became increasin
 
 64-bit computers, if truly working as 64-bit and not emulating, have eight additional 64-bit general registers (R8--R15). The general registers are now called,
 
-
-
 ++
    @ RAX
    @ RCX

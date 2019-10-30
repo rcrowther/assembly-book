@@ -69,25 +69,31 @@ That is, shove the base pointer onto the stack, so it can be later retrieved. Th
 rsp -> [?]
        [?]
        [?]
-rbp -> [?]
+rbp -> [base data]
 ? 
 
-Goes to,
+Push,
+
+??
+rsp -> [base address]
+       [?]
+       [?]
+       [?]
+rbp -> [base data]
+? 
+
+Relocate stack pointer,
 
 ??
 rsp/
-rbp -> [?]      
-       [original rbp]
+rbp -> [base address]
        [?]
        [?]
        [?]
-       [?]
+       [base data]
 ? 
-goes to,
 
-
-
-Then when the code leaves, we can do the reverse,
+Then when the code leaves, the reverse. The stack pointer is dragged down to the base, and a pop will retore the original base.
 
 ?cb
 push rbp
@@ -99,25 +105,29 @@ mov rsp, rbp
 pop rbp
 ?
 
-Now the stack pointer is dragged down to the original base, and a pop will retore the original base.
+Any change in the stack pointer is reset,
 
 ??
+       ...
+       [?]
+       [?]
+       [?]
 rsp/
-rbp -> [?]      
-       [original rbp]
+rbp -> [base address]
        [?]
        [?]
        [?]
-       [?]
+       [base data]
 ? 
 
-Goes to,
+Pop into rbp,
 
 ??
-rsp -> [?]
+rsp -> [base address]
        [?]
        [?]
-rbp -> [?]
+       [?]
+rbp -> [base data]
 ? 
 
 The cute thing about this code is that it naturally erases any previous frame data, wether it was popped or not, by making it into free space. It also allows all sorts of debugging by tracing the frames about---which is called ''call stack debugging', and ''stack unwinding'. 
@@ -125,10 +135,96 @@ The cute thing about this code is that it naturally erases any previous frame da
 What I don't like about the description, and maybe you are suspicious too, is that this section is too simply written. Notes are missing.
 
 
-== Allocating space in a frame
+== Frames, the missing notes
+First, the nature of the ''push' instruction. Intel documentation,
+
+#bq
+Decrements the stack pointer and then stores the source operand on the top of the stack.
+#
+
+There's always two ways of doing this, move then store, or store then move. They both have their advantages. The main point from this is, with the move before the store, both pointers start looking at the reverse address of the new frame. You can ''push' safely onto this. What you can not do is put new data into the new frame by offset. Doing that would destroy the frame structure.
+
+The ''push' instruction is naturally at the bit size of the stack for the architecture. So there is no ''pushq' instruction (thank goodness).
+
+The ''rbp' register should be preserved by any intermediate function, and in C this is a call convention. But ''rsp' could move anywhere.
+
+!!!!!!!!!!!What does 'call printf' do that clobbers the push?
+ 
+=== Allocating space
+Believe me or not, the free space we move into needs consideration.
+
+== No sub-calls---the red zone
+The call convention we are using, the C calls under Unix on x64, have a special provision. You get 128 bytes of negative space above the stack ponter to lark about in.
+
+#bq
+ It may be used for temporary storage but can be destroyed by any called function.
+#
+
+A push will work fine. Unfotunately,sub-function will destroy it. And we use C calls for printing. So for us it is gone. But the red-zone is fine if you do not run a C, or any other, call.
+
+
+=== Stack pointer if there are sub-calls
+Problem is, the base pointer can not be upped to any arbitary value,
+
+#bq
+The stack must be aligned on a 16 byte boundary when a function is called,so %rsp must be divisible by 16 immediately preceding any 'call' instruction.
+#
+
+You'll find, wherever it lies, the stack pointer is always divisible by 16 at the start of code. So the stack pointer needs to be alsigned before any call. You can do that by hand, 
+
+?cb
+    sub rsp, ???
+?
+
+or ...
+
+??? how does gcc do this????
+
+=== Allocating space in a frame
+If you are using offsets, code is different. We only want to push the stack pointer downwards so that any push/pop operations will happen there, and we have clear space below.
+
+Again, best on a 16-bit boundary.
+
+?cb
+    sub rsp, 32
+?
+
+Now you can, for example,
+
+?cb
+    mov qword [rbp-24], ???
+    mov qword [rbp-16], ???
+    mov qword [rbp-8], ???
+
+    ; or,
+    ;mov qword [rbp-8*3], ???
+    ;mov qword [rbp-8*2], ???
+    ;mov qword [rbp-8*1], ???
+?
+
+Note the points here,
+-- move into free space with negative values
+-- stack measures are measured in bytes, and a 64-bit value is 8 bytes
+-- the first 8 bytes are occupied by the (don't touch!) previous rbp value
+
+Unless this is your day-job, you probably need some macros or a code generator to help.
 
 
 == Parameters
+Yikes. On x64 these are below the rbp. In fact, the return comes first,
+
+rsp/
+rbp ->  [base address]
+        [return]
+        [arg1]
+        [arg2]
+        [arg3]
+        [...]
+        [base data]
+?
+
+Enjoy.
+
 
 = CPU instruction support 
 Added in the 186 (so near-universal),
@@ -140,7 +236,7 @@ Added in the 186 (so near-universal),
  : Releases the local stack storage created by the previous ENTER instruction.
 +
 
-Reputedly, these are not used very often. The story is that they can be slower than the single instructions. For sure, it is often not necessary to do all the instructions these commands do. And cutting down on excess code is one reson for working in assembly code.
+Reputedly, these are not used very often. Well, ''leave' is used, but not ''enter'. The story is that they can be slower than the single instructions. For sure, it is often not necessary to do all the instructions these commands do. And cutting down on excess is one reason for working in assembly code.
 
 
 == calls
