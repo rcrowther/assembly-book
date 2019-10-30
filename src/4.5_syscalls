@@ -59,13 +59,27 @@ Move the code onto EAX, push any parameters to the stack (the call convention fo
 
 ?cb
 mov	eax, 42		; system call number (sys_exit)
-int	0x80		; call kernel
+int	0x80		; call kernel via interrupt
 ?
 
+== x86/x64 controvesy
+Above are ways to do this on the two architectures. In practice, the x32 way works on x64. If you were constructing code to work on both systems, then it is the only opotion. But the x64 ''syscall' is faster. Incidentally, the situation is confused by vendors. For x64, Intel adopted AMD's instruction set. ''SYSCALL/SYSRET' emerged on AMD K6. Intel modded with,
++dd.htz
+~ SYSENTER
+~ SYSEXIT
++
+ ''SYSCALL/SYSRET' works on Intel, and I'm not sure many use ''SYSENTER/SYSEXIT'. 
+
+I am really not saying more about what is a small part of assembly coding. For explosive detail, try the links,
+
+~~ Using sysenter,
+:: [a(https://www.felixcloutier.com/x86/syscall) ]
+~~ Good ansewer on sysenter, and syscalls in general,
+:: [a(https://stackoverflow.com/questions/15168822/intel-x86-vs-x64-system-call)]
 
 == Where do I find out about syscodes?
 
-The classic reply is to look in 
+The classic reply is to look in, 
 
 ?cb
 /usr/include/asm/unistd.h 
@@ -97,7 +111,7 @@ But that will not tell you the form of the call---parameters and types. Niether 
 == What can I do with syscalls?
 If you are ok with what they mean, you could look at the lists referred to above. For everyone else...
  
-Al lot of very low level activity to push and manipulate data round the operating system. These are some sexamples, chosen only to show the range (currently, there are about 500 syscalls in Linux)
+Al lot of very low level activity to push and manipulate data round the operating system. These are some examples, chosen only to show the range (currently, there are about 500 syscalls in Linux)
 
 ++
 - mmap
@@ -196,7 +210,7 @@ As there are no libraries, we could use the Linux linker directly, but we use GC
 ?
 
 
-You can find a lot more on the web about using assembly code to run syscalls, but we leave the subject now.
+You can find a lot more on the web about using assembly code to run syscalls, but we leave the subject, never to return.
 
 
 

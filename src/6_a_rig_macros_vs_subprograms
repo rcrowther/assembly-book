@@ -49,7 +49,7 @@ SECTION .text
 
 I guess this much may be known to most readers, but I put it here anyhow.
 
-The point is, in assembly language these two approaches are alternatives. Users of the C programming language will know of the C preprocessor---a macro system very like that used in NASM. However, C code is vastly more expressive than the macros, and the calls to sub-programs very much so. In C programming, the pre-processor is limited, and deliberately so. I've seen some extensive and complex C macros but, on the whole, the pre-processor is only for establishing universal constants (usually adapting C programs to the environment e.g. changing the code between 32 and 64 bits).
+The point is, in assembly language these two approaches are alternatives. Users of the C programming language will know of the C preprocessor---a macro system very like that used in NASM. However, C code is vastly more expressive than the macros, and the calls to sub-programs very much so. In C programming, the pre-processor is limited, and deliberately so. I've seen some extensive and complex C macros but, on the whole, the pre-processor is often used only for establishing universal constants (usually adapting C programs to the environment e.g. changing the code between 32 and 64 bits).
 
 In NASM, the macro system is extended from C. The macros can be context-aware, that is, they are capable of local variables. This is a very significant idea. You see, assembly programs are much simpler than C programs, and sub-program calls very much so. With the basic system so simple, if macros can be extended by local variables, then macros are a near-universal replacement for sub-program calls. An alternative approach to the same need.
 
@@ -57,7 +57,7 @@ In NASM, the macro system is extended from C. The macros can be context-aware, t
 
 Macros,
 ++
-@ Super fast. The code is worked through (''expanded') by the compiler, then inlined. No cost at all.
+@ Super fast. The code is worked through (''expanded') by the compiler, then inlined. No runtime cost at all.
 @ Will bulk code if repeated a lot, maybe causing memory paging (thus slow).
 @ Are invisible when small (e.g. a special constant), but become difficult to write and read at length.
 @ Become awkward when handling parameters (NASM macros are not a LISP, that's for sure)
@@ -66,7 +66,7 @@ Macros,
 
 Sub-programs,
 ++
-@ Very fast. A local jump costs (AMD documentation) latency 1. Adding in the return jump, latency 2. Compared to any other action, not expensive.
+@ Very fast. A local jump costs (AMD documentation) latency 1. Adding in the return jump, latency 2. Compared to other actions, not expensive.
 @ In larger memory situations, likely to be handled more fluidly.
 @ Are easy to read, in a way encouraged by high-level coding.
 @ Have consistent parameter handling (but difficult to write, as we will see in later posts)

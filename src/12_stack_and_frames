@@ -10,125 +10,125 @@ Let's establish the basics.
 @ The base pointer (register BP, EBP, RBP), if it has been set, usually points to the last item (lowest address) pushed in a previous stack frame
 +
 
-So,
+The naming about stacks is difficult. Many illustations I have seen stress the negative numbers. Personally, when visualising, I prefer to invert the numbering system. That way ''up' is still the free space, and all the diagrams heere will be drawn like that.
+
+== The stack, simple right?
+A ''stack' is a first on, first off collection. The usual commands are ''push' and ''pop'. Keep pushing objects on and a stack will grow upwards. The names are illustrative. And the big, one-and-only, assembly language works like that too. So,
 
 ?cb
-mov rbp, rsp
-
+printReg(''rsp')
 push 79
 push 87
-
-; rax = 79
-mov rax, [rbp-8]
-; rax = 87
-mov rax, [rbp-16]
-
-; rax = 87
-mov rax, [rsp]
-; rax = 79
-mov rax, [rbp+8]
+pop rax
+printReg(''rax')
+printReg(''rsp')
+pop rax
+printReg(''rax')
+printReg(''rsp')
 ?
 
+Will print ''87' then ''79'. And the stack pointer ''rsp' will decrement on a ''push', and increment on a ''pop'. All is as expected.
 
 
-So.
+== The stack, not simple
+A stack is not seen often in high-level code, but is a key programming construct. With a stack, most things that need to be done on a computer can be done. Though that would make life awkward.
 
-
+The assembly language stack is not treated as high level code. Often it is not treated as a stack at all. It is, after all, a tower of memory with a pointer. Often, it is treated as an array, and the ''rsp' pointer treated as the start of an offset (if you've ever used some low stack implementations, you may have encountered ''peek' commands and the like). You will need to get used to code like this,
 
 ?cb
-SECTION .text
-global main
-
-main:
-    push rbp
-
-    printChar 'b'
-    printlnChar ':'
-    println64 rbp
-    printChar 's'
-    printlnChar ':'
-    println64 rsp
-
-    pop rbp
-    mov rax,0
-    ret
+printReg(''rsp')
+push 79
+push 87
+mov rax, [rsp+8*1]
+printReg(''rax')
+printReg(''rsp')
+mov rax, [rsp+8*2]
+printReg(''rax')
+printReg(''rsp')
 ?
 
-results,
+Does the same as the last code, but instead of popping the values, temporarily sends an offset down the stack to read the values. When dealing with a small block of values, this can prevent a lot of popping and pushing.
 
-?cb.result
-b:
-0
-s:
-140736179997408
-?
+== stack ranges are frames
+The CPU stack contains much data, of different types and purpose. Much of it is small blocks of data, which would in a higher level language be parameters and local variables. There exists a convention to make sense and trace these blocks. When code moves to use the stack for a different purpose, it can subdivide the stack into areas, or ranges. Each area is called a ''frame'.  
 
-For what it is worth, the next line of code was located at memory address ''140736179997408'.
+The way this works is to use a second pointer, the base pointer, ''rbp'. This keeps track of the ''low' end of the range (the highest numeric).
 
-
-== stack ranges
-The CPU stack contains much data, of different types and purpose. Treating the stack as one pile of data rapidly becomes confusing.
-
-There exists a convention to solve this. When code moves on to use the stack for a different purpose, it can subdivide the stack into areas. Each area is called a ''frame'.  
-
-The way this works is that the base pointer is reajusted to the current stack top/pointer position. Then the top/pointer position is decremented to add free space to the stack. The result is, the base pointer and stack/top pointer now define a range within the stack.
-
-If we do this, after the frame is used, we must be able to retrieve the last ''frame', otherwise the data is near-useless. So before the new range of stack indexes is defined, the value of the old base is pushed to the stack (presumably the code which defined the previous frame knows how big it is, but it will need the base pointer set to the position it was working from). We end up with,
-
-*{stack_frames}
- 
-The code looks like this,
+So let's say we want to define a new frame. We do this,
 
 ?cb
-    ; save calling function's base pointer address,
-    ; for later reset
-    push rbp     
-
-    ; set the base as the current pointer (start of free area)
-    mov rbp, rsp 
-
-    ; allocate a bit of the free space to create a range of free space
-    ; in this case, 4 push places
-    sub esp, 4   
+push rbp
+mov  rbp, rsp
 ?
 
-Setup is now,
+That is, shove the base pointer onto the stack, so it can be later retrieved. Then set the base pointer to ''rsp', i.e. the last known pushed item, the empty ''top' of the stack.
+
+*(stack_when_framed.png) 
 
 ??
-rbp -> [original rbp]
-       [?]
-       [?]
-       [?]
 rsp -> [?]
-?
+       [?]
+       [?]
+rbp -> [?]
+? 
 
-The return code is,
-
-?cb
-
-    ; back the stack pointer to the beginning of range of free space
-    ; add esp, 5 
-
-    ; can be done more conveniently as...
-    mov rsp, rbp
-
-    ; restore ebp 
-    pop ebp
-?
-
-Setup is now,
+Goes to,
 
 ??
-ebp -> original rbp
+rsp/
+rbp -> [?]      
+       [original rbp]
+       [?]
+       [?]
+       [?]
+       [?]
+? 
+goes to,
 
-rsp -> [(original rbp)]
-       [?]
-       [?]
-       [?]
-       [?]
+
+
+Then when the code leaves, we can do the reverse,
+
+?cb
+push rbp
+mov  rbp, rsp
+
+...
+
+mov rsp, rbp
+pop rbp
 ?
 
-This snippet of code is robust. Whatever happens to the stack pointer (if the base pointer is only used for its given purpose, and data not popped indiscriminately from the stack), the stack state is restored.
+Now the stack pointer is dragged down to the original base, and a pop will retore the original base.
+
+??
+rsp/
+rbp -> [?]      
+       [original rbp]
+       [?]
+       [?]
+       [?]
+       [?]
+? 
+
+Goes to,
+
+??
+rsp -> [?]
+       [?]
+       [?]
+rbp -> [?]
+? 
+
+The cute thing about this code is that it naturally erases any previous frame data, wether it was popped or not, by making it into free space. It also allows all sorts of debugging by tracing the frames about---which is called ''call stack debugging', and ''stack unwinding'. 
+
+What I don't like about the description, and maybe you are suspicious too, is that this section is too simply written. Notes are missing.
+
+
+== Allocating space in a frame
+
+
+== Parameters
 
 = CPU instruction support 
 Added in the 186 (so near-universal),
@@ -140,15 +140,7 @@ Added in the 186 (so near-universal),
  : Releases the local stack storage created by the previous ENTER instruction.
 +
 
-Reputedly, these are not used very often. The story is that they can be slower than the single instructions.
-
-Of mild associated interest, since the 386, these instructions,
-
-+dd.htz
-~ SYSENTER
-~ SYSEXIT
-+
-which first emerged as SYSCALL/SYSRET on the AMD K6.
+Reputedly, these are not used very often. The story is that they can be slower than the single instructions. For sure, it is often not necessary to do all the instructions these commands do. And cutting down on excess code is one reson for working in assembly code.
 
 
 == calls
@@ -159,24 +151,8 @@ When the instruction ''call' is issued, the return address is pushed to the stac
 
 
 
-== Stack frames
-More confused nomenclature. What we called a stack range is often called a stack frame. But a stack frame, as often refered to in assembly language literature on sub-programs, means a specific subset of stack range usage. 
-
-Stack frames are an area/range of a stack used to store data for a sub-program. So a frame may contain,
-
-++
-@ locals
-@ return address
-@ parameter values
-+
-
-Mention of a frame often suggests that the base pointer has been adjusted.
-
-The reason for using stack frames for sub-program data is because the sub-program data, like the sub-program code, ought to be gathered in one place. If it is, the overall program becomes more robust, and easier to theorise about. 
-
-And you need to be aware of stack winding and unwinding to use external call conventions.
-
-That said, assembly language made no demand on you to form stack frames for sub-program calls. If you want, use static variables and registers. Use of frames only makes a program more robust and easier to talk about. It is use of the stack that makes local variables and recursive sub-program calls possible.
+== No need for frames?
+That said, assembly language made no demand on you to form stack frames for sub-program calls. If you want, use static variables and registers. Use of frames only makes a program more robust, easier to talk about, and debug. Some very agressive compiler optimisations drop the frames and use relative addressing for everything.
 
 
 == Call stack
@@ -195,7 +171,8 @@ But in 64-bit code, as soon as an external call is made, this becomes difficult.
 
 There is no negociating this. Parameter passing by register is often convenient, and sometimes fast. The payoff is that registers containing significant material will need to be backed into the stack. Significant data which needs to persist across external calls must probably start on the stack.
 
-Which is a sort of warning, I suppose. Several utility programs, especially those that print out, will took very different in 32-bit and 64bit versions. Sure, the offset adressing of 32-bit versions will be dropped for 64-bit, but the 64-bit versions will gain a fair few more ''push'/''pop's.  
+Which is a sort of warning, I suppose. Several utility programs, especially those that print out, will took very different in 32-bit and 64bit versions. Sure, the offset addressing of 32-bit versions will be dropped for 64-bit, but the 64-bit versions will gain a fair few more ''push'/''pop's.  
+
 == The stack
 The PUSH, POP, PUSHA (push all registers), and POPA (pop all registers)
 
@@ -234,4 +211,8 @@ Since coders con't go for it, and frames are a concept that go beyond sub-progra
 %endmacro
 ?
 
++dd
+~ Brief overview with valuable Linux info,  
+: [a{https://eli.thegreenplace.net/2011/09/06/stack-frame-layout-on-x86-64}]
++
 

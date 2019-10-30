@@ -11,7 +11,7 @@ Keeping the discussion to small chunks of data that walk us down useful roads, l
 
 Floating-point data is often used round sound and graphics applications. The height (volume) of a sound wave can be reduced, and a simple echo, can be programmed by integers. But, soon as you want a special effect like compression, you may well need floating point arithmetic. The human ear is far too sensitive to stand for approximations that throw in wild results---indeed, a wild number in a sound stream can blow your speakers. As for graphics, the human eye is sensitive to the effects. Sure, a blur can be programmed with a simple fuzz between adjacent pixels, but for a more flexible and subtle ''unsharpen' effect, you'll need floating point data and arithmetic.
 
-Sound data often has a constraint it must work in real time. On an old computer I owned, I calculated live sound had about 60 clock cycles to add effects. Easy enough to add a volume control and some input switching, enough for a equaliser, but running short for other effects. Unless you're coding a game, graphics do'nt have to work in real time, but have the problem of huge information. So this is where conventional coding lore is shoved aside, and a coder may want to crunch-optimise the critical code. And the coder may start thinking about assembly language, so every single clock cycle is working to the max.
+Sound data often has a constraint---it must work in real time. On an old computer I owned, I calculated live sound had about 60 clock cycles to add effects. Easy enough to add a volume control and some input switching, enough for a equaliser, but running short for other effects. Unless you're coding a game, graphics don't have to work in real time, but have the problem of huge information. So this is where conventional coding lore is shoved aside, and a coder may want to crunch-optimise the critical code. And the coder may start thinking about assembly language, so every single clock cycle is working to the max.
 
 Ignoring every other tutorial on assembly language, lets look at basic handling of floating-point data.
 
@@ -190,13 +190,13 @@ SSE still did not take off as a general idea. but did become used in scientific 
 
 
 == Floating point C interfacing 2
-Remind me again, why are we bothered?
+Remind me again, why are we bothered talking about these registers?
 
 Well first, because if you are interested in assembly langauge for sound or graphics, you may have an interest in these efficint parallel/matrix algebraic instructions. It's enough to note they exist.
  
 And second, because the SSE registers, especially ''xmm0', are how the C convention passes floating point parameters on 64-bit architectures.
 
-There are two things you need to know. First, that we use the SSE(2) registers to pass the parameters (now those registers, aster 3D-Now! are floating point). Second, that integer and floating-point parameters must be passed in the same register index register as in the instruction. That means, for,
+There are two things you need to know. First, that we use the SSE(2) registers to pass the parameters (now those registers, after 3D-Now! are floating point). Second, that integer and floating-point parameters must be passed in the same register index register as in the instruction. That means, for,
 
 ?cb.c
 x(float, float, integer, float)
@@ -205,20 +205,18 @@ x(float, float, integer, float)
 you do not pass,
 
 ??
+float1 xmm0
+float2 xmm1
 integer1 rdi
-
-float1 xx0
-float2 xx1
-float3 xx2
+float3 xmm2
 ?
 
 you pass,
 
 ??
-integer1 rdx
-
 float1 xmm0
 float2 xmm1
+integer1 rdx
 float3 xmm3
 ?
  
@@ -271,3 +269,5 @@ The ''movq' used to load is a little more intuitive than the macro's ''movss', a
 
 C functions called with float parameters. I can see possibilities...
 
+=== A big warning
+This handling of float in SSE registers is consistent. It even works in situations where you may think it will not. For example, on instructions with variable parameter input. Yes, ''printf', to print out a floating point number, must recieve that number on an SSE register, probably detected from the format string, whatever the form and register-position of other parameters.
