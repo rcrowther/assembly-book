@@ -39,8 +39,12 @@ On x64 Linux the system calling convention is not unlike the ''C' calling conven
 
 Not all the parameters need to be used.
 
+=== Clobbering
+Clobbering means which register contents may be overwritten in a call. The main ones are r10, r11 (oddly). And any you use for parameters.
 
-
+Any other text you see will be relating to 32bit, not 64bit, conventions. In 64bit conventions, the stack may come back a little grown???, but other registers like ''rbp' are preserved.
+ 
+[a https://aaronbloomfield.github.io/pdr/book/x86-64bit-ccc-chapter.pdf]
 
 == Structure of a syscall
 === x64

@@ -31,7 +31,7 @@ Will print ''87' then ''79'. And the stack pointer ''rsp' will decrement on a ''
 
 
 == The stack, not simple
-A stack is not seen often in high-level code, but is a key programming construct. With a stack, most things that need to be done on a computer can be done. Though that would make life awkward.
+A stack is not seen often in high-level code, but is a key programming construct. With a stack, most things that need to be done on a computer can be done. Though to use a stack for everything would make life awkward.
 
 The assembly language stack is not treated as high level code. Often it is not treated as a stack at all. It is, after all, a tower of memory with a pointer. Often, it is treated as an array, and the ''rsp' pointer treated as the start of an offset (if you've ever used some low stack implementations, you may have encountered ''peek' commands and the like). You will need to get used to code like this,
 

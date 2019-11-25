@@ -76,7 +76,45 @@ Try uncomment the ''mov', see what happens.
 == While...
 Not a single example covering how to loop.University primers must see it below them. Honestly, it's no wonder assembly code is ''difficult'.
 
-Ok, a loop, made from things we know,
+Ok, a loop, made from things we know. This imitates C code like,
+?cb
+  int x = 7
+  while(x > 0) {
+    x--
+    printf("%d", x)
+  }
+?
+
+Thats a classic sort of while loop (without some C tricks). In assembly,
+
+?cb
+main:
+    push rbp
+
+    mov rcx,7	
+
+    .loop1
+	    cmp	rcx, 0
+	    jle	.loop1Exit
+	    dec	rcx
+        printlnInt rcx
+        jmp .loop1
+    .loop1Exit
+    pop rbp
+    mov rax,0
+    ret	
+?
+
+=== The compiler speaks
+Guess what? Most compilers will not put out code like the above. To see why, lets make us an do..while loop. Mimic C code,
+
+?cb
+  int x = 7
+  do {
+    printf("%d", x)
+    x--;
+  } while(x > 0)
+?
 
 ?codeblock
 main:
@@ -95,9 +133,48 @@ main:
     ret	
 ?
 
+Ignore that this behaves slightly differently (it will always execute the loop code once). Concentrate on what the code looks like. Can you see, there is only one label, not two? The first loop was testing continually, but only jumping when an end was reached. So it wasted the ""If test... then Jump" instruction. It needs an extra jump at the end to loop round. But the do...while loop jumps on the test---if we are not out of the loop, go back. It uses fewer instructions, in a critical area. And it's neater.
 
+Ah, you say, but it always executes it's code once. That is often not what is needed for a while loop, what is needed is for the test to come first, if the test fails for it never to execute the code.
 
-However, here is some Intel documentation,
+Well, we can more or less get the best of both worlds by hopping gover the code to start at the test. Ready for this?
+
+?cb
+  int x = 7
+  goto .Loop1Entry
+  do {
+    printf("%d", x)
+    x--;
+   .Loop1Entry
+  } while(x > 0)
+?
+
+Assembler,
+
+?cb
+main:
+    push rbp
+
+    mov rcx,7	
+    jmp .loop1Entry
+    loop1:
+        printlnInt rcx
+	    dec	rcx
+        .loop1Entry
+	    cmp	rcx, 0
+	    jg	loop1
+
+    pop rbp
+    mov rax,0
+    ret	
+?
+
+On anything over one or two loop repetitions, this will be faster than the original while... constructions. And it does the same thing.
+
+Course, the prescence of the Goto/Jmp will no doubt raise philosophical questions. Anyway, this is how GCC makes a while... loop. If it's good enough for them...
+
+=== Alternative instructions
+Here is some Intel documentation,
 
 #bq
 7.3.8.2
@@ -110,7 +187,7 @@ the ECX register each time they are executed and terminate a loop when zero is r
 
 ''xCX', you may recall, is the counting register.
 
-A combined command for the above. Now we have,
+Ah. A combined and all-in command for the above. Now we have,
 
 
 ?codeblock
@@ -128,7 +205,7 @@ main:
     ret	
 ?
 
-Is there a criminal, dirty, unprofessional reason for this. According to AMD documentation, no,
+Is there a criminal, dirty, unprofessional reason for this? According to AMD documentation, no,
 
 ?bq
 Instruction    Latency
@@ -140,39 +217,21 @@ LOOPNZ         8
 ?
 Like higher level languages, the raw code is faster. Is is really for cleaner programming???
 
-Anyway, these are two ways do a counting loop. Also, it goes some way to explaining known effects in higher-level (than assembly code) languages. You know that C [? while] loops are very fast? And that, even in higher level languages which can't express decrement (except in general terms), decrementing a loop counter to zero is often the fastest control? Well, if the compiler spots those loops, they must reduce to a ''cmp loop' instruction pair. Without knowing the number of clock cycles, it's a promising situation theoretically---compare to zero ought to be fast---and a promising situation in terms of processor opcodes--- two.
+And here's a thought. GCC, when faced with a cmp to zero uses ''test', which compares by ''and', not ''cmp'. Is thee a reason? Sometimes, when using RAX, literals, and/or extended bit sizes, ''test' is 1 cycle, where ''cmp' can be 4 cycles. You need to look at documentation to see exactly where, the combinations are many.
 
-Also. I've seen the C [? for...else...] statement described as ''flecible'. It is also, often, very fast (there's an ongoing discussion about how fast, the statement is often recommended for style). Personally I find the statement has a lumbering syntax and a pain to write. But you can see how the clumsy syntax turns into efficient machine code---if the compiler detects conditions such as a simple decrement, or can optomise to a decrement, then the statement reduces to a couple of instructions.
+== Summary
+Anyway, these are two ways do a counting loop. Also, it goes some way to explaining known effects in higher-level (than assembly code) languages. You know that C [? while] loops are very fast? And that, even in higher level languages which can't express decrement (except in general terms), decrementing a loop counter to zero is often the fastest control? Well, if the compiler spots those loops, they may reorganise to ''cmp loop' instruction pairs, with special instructions. Without knowing the number of clock cycles, it's a promising situation theoretically---compare to zero ought to be fast---and a promising situation in terms of processor opcodes--- two.
 
-Another (more common) kind of loop places the condition at the top, then must jump out,
+Also. I've seen the C [? for...else...] statement described as ''flecible'. It is also, often, very fast (there's an ongoing discussion about how fast, the statement is often recommended for style). Personally I find the statement has a lumbering syntax and is a pain to write. But you can see how the clumsy syntax turns into efficient machine code---if the compiler detects conditions such as a simple decrement, or can optomise to a decrement, then the statement reduces to a couple of instructions.
 
-?codeblock
-main:
-    push rbp
 
-    mov rcx,7	
-
-    loop1:
-        dec rcx
-	    cmp	rcx, 0
-        jl forward
-        printlnInt rcx
-	    jmp loop1
-    forward:
-
-    pop rbp
-    mov rax,0
-    ret	
-?
-
-A classic while loop. 
-
+=== Uncovered
 Of course, there are limitations here. I've not considered protecting the registers. I've not considered looping over a range (the [code for()...] statement in C). (Hint: try some arrangement such as a loop counter in memory or a register (so that it can be accessed within the loop), and push/pop limits from the stack). If you like or need such devices, there may be a need for a ''break'.
 
 And I've not considered multiple conditions for exit, and I havn't covered string handling (for which, to some extent, the CPU has instructions). But this is enough to get you going, and it has the techniques you need. Indeed, with [c if] and [c  while] constructs, you have the basics of structured flow control.
 
-_
 
+== Macros
 Now, live in text, I loose patience. We're going to do something which is not in tutorials and references (except maybe as a hint). It's not a usual way of presenting assembly code. But I have some aims, such as keeping it simple, and making it readable. Take this up if you like. Add these,
 
 ?codeblock

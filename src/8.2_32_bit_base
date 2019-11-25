@@ -1,0 +1,44 @@
+For 64 bit the entire assembly line and insytucytion set were rethought. You've seen some examples of this, and often 74 bit programming can seem relatively straightforward. But there are catches, due to backwards compatibility and so forth, One of them is this,
+
+>>
+For 64bit, many of the instructions were upgraded. Pop and push will work as expected. However, general instrictions tend to work from a 32bit assumption.
+>
+???Needs citing
+
+The first thing to say is that our asembler, NASM, overdides this with it's usual bluntness.
+>>
+NASM will try to make the smallest instruction possible, unless told otherwise
+>
+???Needs citing
+
+What does this mean? Well, lets say you pop or push,
+
+??cb
+  push 9
+  pop rax
+?
+
+That will work in 64bit. Pop and push are instructions that could be upgraded to 64bit without a problem eith semantics or meaning. But lets load a memory adress for a printout,
+??cb
+mov [rbp-32], veryBigNum
+mov rax, "int:%d"
+mov rsi, [rbp-32]
+call printf
+?
+Will not work. NASM anyway reduces it to the smallest move possible. Lets ask NASM explicitly to handle as something bigger,
+
+??cb
+mov [rbp-32], veryBigNum
+mov rax, "int:%d"
+mov qword rsi, [rbp-32]
+call printf
+?
+Nope. NASM will take it's best shhot at making this bigger. It will compile and run. But it's not 64bit, because there is no ''mov' instruction that can retrieve from a relative address in 64bit. The retrieval needs to be explicit. Which means manually setting the address,
+??cb
+mov [rbp-32], veryBigNum
+mov rax, "int:%d"
+mov qword rsi, rbp
+sub rsi, 32
+call printf
+?
+That will work.

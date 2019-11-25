@@ -56,6 +56,10 @@ Assembly language uses some old/low-level computing word for bit sizes. This can
 
 It helps to learn these. Or, at least, the one for the bit size of your own computer.
 
+~~ This goes further. Deliberately, I do not,
+:: [a{https://stackoverflow.com/questions/12063840/what-are-the-sizes-of-tword-oword-and-yword-operands}]
+
+
 === Memory
 Memory works as if the memory is one big array with indexes. Assembly language tends to cover this up by adding labels, then you call the labels. The space can be allocated with no data, or can be initialised with data. This is not working code but, I hope, you get the drift,
 
