@@ -188,6 +188,28 @@ Writing as algorithm...
 
 You don't need to understand this now. We'll cover the idea fully later. But in short---the assembly program ''main' stashes the base pointer because programs love to mess round with it. ''printf' itself probably messes round with the pointer---we hope it restores it too. But hark at this --- if we remove the restoration, the programs throw a segfault. That's because ???. 
 
+== And a last word on conventions
+Conventions are conventions are only agreements. And, in this case, are particularly loose. If something doesn't do as you wanted, don't suspect yourself, suspect the convention. So you thought this useful idea might print a newline?
+
+?cb
+extern putchar
+...
+mov rsi, 10
+call putchar
+?
+
+Silently, it will not. But this will,
+
+?cb
+extern putchar
+...
+mov edi, 10
+call putchar
+?
+
+One way to confirm this is to part-compile some C code.
+
+
 == Charms
 Ok, we covered a lot of ground. And a lot of that ground was warnings and charms. That's machine code for you. But we do have a library call, and a working printout.
 If you went away from here and tried to program your own external call, if the call had only had one parameter and was an int, it may work. That's a start.

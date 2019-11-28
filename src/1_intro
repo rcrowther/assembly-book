@@ -137,7 +137,22 @@ As the bit size of the Intel x86 chips (and the AMD chips which became increasin
    @ EDI
 +
 
-64-bit computers, if truly working as 64-bit and not emulating, have eight additional 64-bit general registers (R8--R15). The general registers are now called,
+64-bit computers, if truly working as 64-bit and not emulating, have eight additional 64-bit general registers (R8--R15). 
+
+++
+   @ R8
+   @ R9
+   @ R10
+   @ R11
+   @ R12
+   @ R13
+   @ R14
+   @ R15
++
+
+All these registers can be used in general, but sometimes have special purpose. Note that R8 and R9 are sometimes used for passing parameters, and R10 and R11 can be clobbered by function calls. (see [a() calling conventions]). Note also that a 64Bit computer may have not one but several extra ragister sets, for flosting point and matrix calculations.
+
+The 64bit general registers are called,
 
 ++
    @ RAX

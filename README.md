@@ -1,27 +1,27 @@
 # x86 Assembly Code mini‐book #
 
-Working title ”Stumbling through Linux x86 Assembly Language”. A mini‐book/pamphlet written on x86 assembly code.
+Working title ”Stumbling”. A mini‐book/pamphlet written on Linux x86 assembly code.
 
 Currently only available in HTML.
 
 
 ## State of the mini‐book #
 
-Largely unfinished. The text needs re‐writing, possibly a few times (this is only only a first draft). Many examples are missing or not working. Littered with TODOs. Here and there, the text contains flat‐out wrong information.
+Largely unfinished. The text needs re‐writing, many times (this is only only a first draft). Many examples are missing or not working. Littered with TODOs. Here, there, and everywhere, the text contains flat‐out wrong information.
 
-On the plus side, the structure is emerging. Substantial discussions of several subjects have been drafted. Some sections, not only at the beginning, but scattered through the text, are near to final form. The text is heavy with working weblinks.
+On the plus side, structure is emerging. Substantial discussions of several subjects have been drafted. Some sections, not only at the beginning, but scattered through the text, are near to final form. The text is heavy with working weblinks.
 
 
 ## Uploaded format #
 
-The mini‐book is pre‐compiled into HTML (using TML), and has builtin CSS formatting.
+The mini‐book was pre‐compiled into HTML (using TML), and has builtin CSS formatting. The pre-compilation has not been updated for a long time, and the source files are now substancially different. 
 
 
 ## Using the mini‐book #
 
 You can not read direct from Github (this would mean either converting to a markup format for an advanced README, which wouldn’t do justice to formatting, or running a Github Pages branch, which I can’t be bothered to maintain).
 
-Download a (compressed) copy to your computer. Go to the folder /html and click on ’contents.htm’. Your web browser will do the rest.
+Download a (compressed) copy to your computer. Go to the folder /html and click on ’contents.htm’. Your web browser will do the rest. For the up-to-date work, please look in the 'src' folder.
 
 
 ## License #
