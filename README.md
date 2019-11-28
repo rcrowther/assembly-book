@@ -14,7 +14,7 @@ On the plus side, structure is emerging. Substantial discussions of several subj
 
 ## Uploaded format #
 
-The mini‐book was pre‐compiled into HTML (using TML), and has builtin CSS formatting. The pre-compilation has not been updated for a long time, and the source files are now substancially different. 
+The mini‐book was pre‐compiled into HTML (using TML), and has builtin CSS formatting. The pre-compilation has not been updated for a long time, and the source files are now substantially different. 
 
 
 ## Using the mini‐book #
