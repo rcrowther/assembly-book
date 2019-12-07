@@ -1,0 +1,80 @@
+= Complex addresses
+== offset coding (address modes) 
+You may have noted from macro code, or finding code on the web, that you can code like this,
+
+?cb
+mov [rax+16], rbx
+?
+,
+On first-time meeting, you may assume assume this is something the assembler is doing for us. After all, the assembler makes life a little easier for us by turning adresses into human-readable labels, yes? So you may assume this is the assembler allowing a little bit of arithmetic to cover some operations. Maybe the code above translates into this?
+
+?cb
+add rax, 16
+move [rax], rbx
+?
+
+No, the assembler is not helping like this. It is reflecting that there are CPU (or perhaps ''machine code') instructions that behave like this. The CPU codes can accept several extra parameters on the op-codes. One of those parameters allows offset positions in memory, constructed like this (much simplified),
+
+??
+op  destination source offset
+--- ----------- ------ ------
+mov rax,        rbx,   16                                                          
+?
+
+This could be proved by looking at the output numbers or, if it can be requested, by asking the assembler to output details on the opcodes created. Or you could take an angled approach by asking the assembler to construct something odd, like a multi-abstracted offset,
+
+?cb
+move [rax+16+rsi+32+rbx], rbx
+?
+
+Guess what? You'll find this fails. Which proves this is not infinately extensible syntax which, in a tool as sensible as NASM, suggests the expression is reflecting some other structure than simple arithmetic---which is opcode structure.
+
+The name of this feature is an ''address mode', and the idea consumes quite a lot of of assembly language discussion. Moreover, it is an idea more or less specific to the level of assembly code. In nearly any language higher than assembly, ''address modes' are abstracted away. 
+
+== What use are address modes?
+The ability to add an offset parameter has a few uses. The story is, At some stages in CPU development they were necessary to access the full range of memory, as one 16bit register can not cover all the memory that could be added to a 16bit machine. So a mode that could add a register or offest to register opcodes was useful.
+
+Even without that primary reason, the offset parameters of opcodes are useful. They let you poke about on the stack without a heap of pushes and pops. They also allow opcode to naturally mimic an array, and other basic structures like a tuple or a C struct. One register holds the base address of the container, while the offset allows to poke into the container. Thus, in higher level languages, offset opcodes can represent ''arrays'.
+
+There is even a sneaky assembly-code trick. An opcode with an offset parameter is really a way of doing simple arithmetic between a register or two, and maybe a literal (an offset). Using offset parameters this arithmetic and allocation is done in one instruction, so with no extra cycles. So if an assembly language coder sees they need a simple arithmetic operation on a value in a register, they may use an offset parameter. This saves clock cycles. You will see this kind of coding regularly. Language compilers can often recognise the opportunity and optomise using this trick.
+
+== In oractice
+Offset programming can become complex. I talked above about how offset syntax would not extend infinately, yet for several reasons offset modes have been extended considerably. On x64 architecture, for several opcodes, is possible to specify a relative address using two registers and an offset. So valid assembly language can look like this,
+
+?cb
+move rax, [rsi*rbx+17]
+?
+
+== In use
+There are some things to know about address modes.
+~~ They are not very necessary in x64
+:: x64 can cover it's potential memory space now and forever using 64bit registers.
+~~ They are still useful to mimic array indexing and the like
+:: ....and they consume less clock cycles and registers than separate unstructions
+
+To code with offsets, you need to know, roughly,
+~~ They often only work in a 32bit (or thereabouts) mode
+:: ...or, in the case of AMD x64, 48bits. So beware of doing tricks with them, or assuming they can transfer full-width data.
+~~ You can't use two at once
+:: ''move [rax+16], [rbx+32]' will fail
+
+Overall, address modes is an intricate subject to which an opcode manual will devote several pages. But on x64 the above thoughts will get you goning as far as you need to go.
+ 
+~~ Too-intricate but suggestive, Wikipedia article,
+:: [a(https://en.wikipedia.org/wiki/Addressing_mode)]
+
+
+== The pesky colon
+Won't be long (try NASM documentation) before you come across some notation like this,
+
+?cb
+  mov ax,[es:di] 
+?
+Well, what does that mean?
+
+At times in computing, the amount of memory available has outstripped the size of register needed to point to that memory. So a set of instructions appeared to join two registers together. With thaat number of bits, the address range was expanded enough to call all the memoery.
+
+x64 expanded the register size, and currently registers can hold sdreses for more parts of memory. So the notation has little interest to x64 assembly coders. So/And I don't want to dive in too far, thats it. 
+  
+:: everything you wanted to know about segment addressing,
+~~ [a(https://thestarman.pcministry.com/asm/debug/Segments.html)]

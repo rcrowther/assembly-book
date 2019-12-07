@@ -1,4 +1,5 @@
 = 13 Sub-programs---functions and procedures
+!!!Needs rewriting for structure
 As a beginner, I ought to note my surprise. I had no idea that a CPU has instructions for internal sub-program calls---I though the controls were all jumps. But they do, even if the instructions are rather raw. ''call' pushes the current address to the stack then makes an unconditional jump.''ret' pops the return then jumps back,
 
 ?cb
@@ -26,7 +27,7 @@ main:
 
 
 
-The cost is about the same as the seperate instructions, so the instructions are a convenience only (''call' latency 4, ''push' latency 3, ''jmp' latency 1).
+The cost is about the same as the seperate instructions, so the instructions are a convenience only (''call' latency 4, ''push' latency 3, ''jmp' latency 1). Paraphrase of AMD statement, ""It is worth inlining instructions of 20 or less cycles, to override the cost of the call. Over that, you may be trying to load too much in memory".
 
 Since the return address is on the stack, stack manipulations in a call block must be balanced.
 
@@ -90,7 +91,7 @@ However, none of the non-volatile registers are parameter registers, so they can
     r14
     r15
 ?
-(''rbp' is also a non-volatile and not a parameter register, but not recommended for general use)
+(''rbp' is also a non-volatile and not a parameter register, but not recommended for general use. Though GCC seems to use it quite freely, pushing to the stack.)
 
 or values can be pushed and popped round the call.
 
@@ -160,7 +161,7 @@ Beyond that, there is a conceptual advantage to cleaning up in calling code. Cal
 So it's your choice, and your choice may well be informed by coding circumstances, and the intent of the code.  
 
 == local variables
-Well, there are two ways here. While assembly coding, you may be able to make data static---as constants with ''equ' or or variables with db ddeclarations. As we have done in all examples.
+Well, there are two ways here. While assembly coding, you may be able to make data static---as constants with ''equ' or or variables with db ddeclarations. As we have done in most examples.
 
 But this is not, in the terms higher-level languages use, ''stuctured'. Specifically, you may want to make variable scope limited to the function itself. This prevents mistakes while coding, and allows recursive proceedure calls. 
 
@@ -173,7 +174,7 @@ Crenshaw13
 
 
 == Printing using sub-programs
-The code in the previous post printed a string out, but only once. In programming, we will often want to print out many strings. We dond't want to repeat code all the time. We need a sub-program.
+The code in the previous post printed a string out, but only once. In programming, we will often want to print out many strings. We don't want to repeat code all the time. We need a sub-program.
 
 Ok, we want to use printing, maybe several times, lets make this into a function. While we do that, let's have two versions---printing with newline, and printing sequentially. To test that, the newline is dropped from the test string. Let's agree on a register to use (''rdi') for the single parameter (a string).
 

@@ -40,7 +40,7 @@ and the assembly compiler does this,
 
 
 == Modifying reference values, assignment
-To modify values at an address, use square brackets (this is not unlike the notation used by several languages for accessing arrays, but be careful).
+To access values at an address, use square brackets (this is not unlike the notation used by several languages for accessing arrays, but be careful).
 
 
 ?cb 
