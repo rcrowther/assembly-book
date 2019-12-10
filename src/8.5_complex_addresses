@@ -54,9 +54,13 @@ So what is going on?
 
 
 == Address modes
-The issue is that we have a mix of actions. The assembler is prepared to evaluate a few of our conveniences. It will evaluate a couple of literal numbers with logic. So will many general computer languages.
+The issue is that we have a mix of actions. The assembler is prepared to evaluate a few of our conveniences. It will evaluate a couple of literal numbers with logic. From the NASM manual,
+>>
+NASM is capable of doing algebra on these effective addresses, so that things which don't necessarily look legal are perfectly all right:
+>
+Like many general computer languages.
 
-However, it is also doing something else. It is reflecting that there are CPU (or perhaps ''machine code') instructions that behave like this. The CPU codes can accept several extra parameters on the op-codes. One of those parameters allows offset positions in memory, constructed like this (much simplified),
+However, NASM, and any assembbler, is also doing something else. It is reflecting that there are CPU (or perhaps ''machine code') instructions that behave like this. The CPU codes can accept several extra parameters on the op-codes. One of those parameters allows offset positions in memory, constructed like this (much simplified),
 
 ??
 op  destination source offset

@@ -1,0 +1,105 @@
+= 14.5 Where to stash data, and clobbering
+There is a fundamental tension in assembly programming. Manipulating data in most ways, even including some bit-widths of move, requires data to be on a register. That's where the opcodes for arithmetic, shifting, conversions, and so forth, target.
+
+You may think that eight basic registers is plenty. And remember, on x64 architecture, there is an extra eight general registers ''r8'--''r15'. After all, what code needs to keep eight different pieces of data about at one time? Assembly programming reduces to doing one thing at a time. You move data in as needed, yes?
+
+Truth is, registers are in short supply. Two of them, ''rbp' and ''rsp', are reserved for special purposes. Now, in x32, we are down to six registers. This is not much improved in x64, because these six registers,
+
+??
+    rdi, rsi, rdx, rcx, r8, r9 (r10 in some rare cases)
+??
+
+ are used by the call conventions. Think about what this means. Whenever a piece of code calls another piece of code, these registers are potentially out of action. 
+
+According to the API, callblocks must preserve some registers,
+
+??
+    rbx, rbp, r12, r13, r14, r15
+?
+
+Any other register may be corrupted (''clobbered'). And one of these registers is, of course, ''rbp', which may be usable in some tight code, but not usually. So, five registers that can be relied on. Not much better than x32.
+
+Again, is this a problem? 
+
+== Practice
+Well, here is the issue. When we start a block of code, we probably wantt to assign all the data locations the code will use. We don't want to be moving them about. Which may well be as many as, or more than, six. 
+
+More then that, we may well be assembling data for something like a block call. Sure, we can shift this data into parameter registers as we go. But that is a strategy that needs to be planned.
+
+And what about, for example, a complex loop? Something like this, tracking two arrays simultaneously,
+
+?cb
+    while (x != end and y!= end) {
+        y++
+        x++
+        # Something to do with...
+        array(x) array(y) 
+        }
+?
+
+We have two variables counting, and we need to carry two references to arrays, preferably in a fast access position i.e. the references in registers. Four variables, of which two, the counters, are likely limited in scope to the loop. Then, what if the loop contains a call to a callblock? And what other variables are needed in code round this loop? Because if we insist on seperate registers for sepearte variables, only two registers remain.
+
+This kind of jiggling of data into and out of registers is tricky, and is where an assembly coder really has an edge over a compiler. A coder recognise that a callblock return can be left in it's register, as it is only used once. Or, you could put it another way, modern compilers go through pipes of detection and optimisations to cut down on the jiggling and swapping involved.
+
+== Allocating initially vs. allocating as asked
+A first decision is wether to gather all these allocations and decisions together at the top of code subunits, or allocate as needed. There are pros and cons both ways.
+
+To allocate everything at the top has the advantage you will know the allocation space and count of variables needed. Also, all the variables are cleanly allocated to seperate space. And the code is easy to read.
+
+It has the disadvanatge that it may be inefficient. Often, variables are only in use for a certain length of code. A loop counter is only needed for the duration of a loop. Before and after this, the variable space could be used for something else. Analysis of this situation by a compiler is called ''liveness analysis', and is the subject of a chunk of theory---see the references.
+
+Contrary, ad-hoc allocation is more efficient, but makes error traacing harder, and resource usage harder to track.
+
+== Where to store variables - registers
+Above, we suggested that variables be stored on registers. This is the obvious solution, fast and clean, but already we see practical limitations. At best we have about six possible local variables.
+
+One approach is to take the ad-hoc approach mentioned above. While code may use far more than six vairiables in one code block, it is rare that it needs six variables at once. But this will mean scanning a block of code to find first and last uses of a variable.
+
+Another approach is to boost the number of available resisters by protecting their values. Lets say you decided to use ''rsi' as a variable. ''rsi' is the first parameter of a call. Now this variable will be interfered with by a function call. But you could protect your use of ''rsi' as a variable,
+
+?cb
+; rsi is a variable, but we need to make a call, so...
+push rsi
+
+; now set up the call
+mov rsi, 
+call some func
+
+; now recall rsi
+pop rsi
+?
+
+There are probblems with this, though. We need to figure out how many parameters are used by the calls and, if using ad-hoc allocation, where they are used. If we are using ''r9', and a call uses six parameters, full protection will need six pushes and pops. It would only take a couple of calls like this to lead to streams of instructions which are not doing anything. 
+
+
+== Where to store variables - stack
+Another place variables can be stored is on the stack. This is using the stack-chunk-as-small-array that we mentioned in a previous section [a{12_stack_and_frames}]. Each variable can be stored at a known offset.
+
+This approach favours pre-allocation. The reason is, the stack may be used for several other purposes---for example, parameter passing. So it's best to get the allocating out of the way straight away. If the allocations are made at the start, they go on top of the stack. Then references can be added from the base pointer. This means the variables can always be retrieved and referenced, whatever happens to the stack in the meantime. Something like,
+
+?cb
+; initially, rsp = rbp
+; space for three 64bit references
+mov rsp, rsp-24
+
+; var 1
+mov rax, rbp-8
+; var 2
+mov rax, rbp-16
+; var 3
+mov rax, rbp-24
+?
+
+No serious manipulation can be done to values stored on the stack. The values must be retrieved as and when needed. Then restored. On the other hand, while the values are on the stack, they will not be interfered with by calls. They can stay there until needed. This is less intrusive, and in the end, liely more efficient, than storage in registers that need to be continually protected by pushes and pops.
+
+== Example strategies
+Compilers need to automate their strategies, so are an interesting place to look.
+
+BCPL is an old language made to create compilers, but was further developed into the language C. It was the first language compiler with an intermediate bytecode language. Nowadays BCPL has three intermediate languages. The ''native' intermediate, used to generate executables, uses a stack model. All variables are saved to the stack, retrieved as needed. Different registers are given special usages, as they were in the first compilers---''rcx' is a loop counter, etc. Most manipulation happens on ''rax', and values are saved back to, and loaded from, the stack. ???refs
+
+Java bytecode also uses a stack model. There are bytecode instructions to save and load from the stack. It assumes four ''local' variables, and four general variables.
+
+GCC seems to poke local varibles into the stack. It seems to do this as needed, and presumably keeps track of stack allocations???
+
+== Last thoughts
+You can save resources by reuse, or protection, but this requires pre-analysis. Just like a coder would do. Most automatic systems assume use of the stack, as it is the most extensible and consistent model.
