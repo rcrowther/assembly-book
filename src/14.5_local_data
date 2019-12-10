@@ -22,7 +22,7 @@ Any other register may be corrupted (''clobbered'). And one of these registers i
 Again, is this a problem? 
 
 == Practice
-Well, here is the issue. When we start a block of code, we probably wantt to assign all the data locations the code will use. We don't want to be moving them about. Which may well be as many as, or more than, six. 
+Well, here is the issue. When we start a block of code, we probably want to assign all the data locations the code will use. We don't want to be moving them about. Which may well be as many as, or more than, six. 
 
 More then that, we may well be assembling data for something like a block call. Sure, we can shift this data into parameter registers as we go. But that is a strategy that needs to be planned.
 
@@ -37,23 +37,38 @@ And what about, for example, a complex loop? Something like this, tracking two a
         }
 ?
 
-We have two variables counting, and we need to carry two references to arrays, preferably in a fast access position i.e. the references in registers. Four variables, of which two, the counters, are likely limited in scope to the loop. Then, what if the loop contains a call to a callblock? And what other variables are needed in code round this loop? Because if we insist on seperate registers for sepearte variables, only two registers remain.
+We have two variables counting, and we need to carry two references to arrays, preferably in a fast access position i.e. the references in registers. Four variables, of which two, the counters, are likely limited in scope to the loop. Then, what if the loop contains a call to a callblock? And what other variables are needed in code round this loop? Because if we insist on separate registers for separate variables, only two registers remain.
 
 This kind of jiggling of data into and out of registers is tricky, and is where an assembly coder really has an edge over a compiler. A coder recognise that a callblock return can be left in it's register, as it is only used once. Or, you could put it another way, modern compilers go through pipes of detection and optimisations to cut down on the jiggling and swapping involved.
 
 == Allocating initially vs. allocating as asked
-A first decision is wether to gather all these allocations and decisions together at the top of code subunits, or allocate as needed. There are pros and cons both ways.
+A first decision is whether to gather all these allocations and decisions together at the top of code subunits, or allocate as needed. There are pros and cons both ways.
 
-To allocate everything at the top has the advantage you will know the allocation space and count of variables needed. Also, all the variables are cleanly allocated to seperate space. And the code is easy to read.
+To allocate everything at the top has the advantage you will know the allocation space and count of variables needed. Also, all the variables are cleanly allocated to separate space. And the code is easy to read.
 
-It has the disadvanatge that it may be inefficient. Often, variables are only in use for a certain length of code. A loop counter is only needed for the duration of a loop. Before and after this, the variable space could be used for something else. Analysis of this situation by a compiler is called ''liveness analysis', and is the subject of a chunk of theory---see the references.
+It has the disadvantage that it may be inefficient. Often, variables are only in use for a certain length of code. A loop counter is only needed for the duration of a loop. Before and after this, the variable space could be used for something else. Analysis of this situation by a compiler is called ''liveness analysis', and is the subject of a chunk of theory---see the references.
 
 Contrary, ad-hoc allocation is more efficient, but makes error traacing harder, and resource usage harder to track.
+
+== Use of parameter registers
+Also worth considering is that parameter registers are really registers pre-initialised with data. They could be used as local variables.
+
+The issue with this is if the parameter data is used in several places. Code like this,
+
+?cb
+func create(b, size) {
+    b.bytesize = size * 8
+    b.size = size
+    }
+?
+
+I'm not saying this is good programming, but it is possible programming. The value ''size' loaded on a register could not be multiplied in-place on that register, due to the second reference.
+
 
 == Where to store variables - registers
 Above, we suggested that variables be stored on registers. This is the obvious solution, fast and clean, but already we see practical limitations. At best we have about six possible local variables.
 
-One approach is to take the ad-hoc approach mentioned above. While code may use far more than six vairiables in one code block, it is rare that it needs six variables at once. But this will mean scanning a block of code to find first and last uses of a variable.
+One approach is to take the ad-hoc approach mentioned above. While code may use far more than six variables in one code block, it is rare that it needs six variables at once. But this will mean scanning a block of code to find first and last uses of a variable.
 
 Another approach is to boost the number of available resisters by protecting their values. Lets say you decided to use ''rsi' as a variable. ''rsi' is the first parameter of a call. Now this variable will be interfered with by a function call. But you could protect your use of ''rsi' as a variable,
 
@@ -69,7 +84,7 @@ call some func
 pop rsi
 ?
 
-There are probblems with this, though. We need to figure out how many parameters are used by the calls and, if using ad-hoc allocation, where they are used. If we are using ''r9', and a call uses six parameters, full protection will need six pushes and pops. It would only take a couple of calls like this to lead to streams of instructions which are not doing anything. 
+There are problems with this, though. We need to figure out how many parameters are used by the calls and, if using ad-hoc allocation, where they are used. If we are using ''r9', and a call uses six parameters, full protection will need six pushes and pops. It would only take a couple of calls like this to lead to streams of instructions which are not doing anything. 
 
 
 == Where to store variables - stack
@@ -90,7 +105,7 @@ mov rax, rbp-16
 mov rax, rbp-24
 ?
 
-No serious manipulation can be done to values stored on the stack. The values must be retrieved as and when needed. Then restored. On the other hand, while the values are on the stack, they will not be interfered with by calls. They can stay there until needed. This is less intrusive, and in the end, liely more efficient, than storage in registers that need to be continually protected by pushes and pops.
+No serious manipulation can be done to values stored on the stack. The values must be retrieved as and when needed. Then restored. On the other hand, while the values are on the stack, they will not be interfered with by calls. They can stay there until needed. This is less intrusive, and in the end, likely more efficient, than storage in registers that need to be continually protected by pushes and pops.
 
 == Example strategies
 Compilers need to automate their strategies, so are an interesting place to look.
@@ -99,7 +114,7 @@ BCPL is an old language made to create compilers, but was further developed into
 
 Java bytecode also uses a stack model. There are bytecode instructions to save and load from the stack. It assumes four ''local' variables, and four general variables.
 
-GCC seems to poke local varibles into the stack. It seems to do this as needed, and presumably keeps track of stack allocations???
+GCC seems to poke local variables into the stack. It seems to do this as needed, and presumably keeps track of stack allocations???
 
 == Last thoughts
-You can save resources by reuse, or protection, but this requires pre-analysis. Just like a coder would do. Most automatic systems assume use of the stack, as it is the most extensible and consistent model.
+You can save resources by reuse, or protection, but this requires pre-analysis. Like a coder would do. Automatic systems often assume use of the stack, as it is the most extensible and consistent model.
